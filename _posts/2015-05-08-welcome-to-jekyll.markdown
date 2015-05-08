@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Monster Slayer"
+title:  "First Post in jekyll"
 date:   2015-05-08 12:51:05
 categories: jekyll update
 ---

@@ -1,12 +1,32 @@
-# Site settings
-title: MonsterSlayer's Way 
-email: dongyado@gmail.com 
-description: > # this means to ignore newlines until "baseurl:"
-    A place to write some words.
-baseurl: "" # the subpath of your site, e.g. /blog/
-url: "http://dongyado.github.io" # the base hostname & protocol for your site
-twitter_username: dongyado
-github_username:  dongyado
+# visit https://github.com/mojombo/jekyll/wiki/Configuration for more settings
 
-# Build settings
+paginate: 10 # pagination based on number of posts
+paginate_path: "page:num"
+exclude: ["README.md"] # files to exclude
+highlighter: pygments
 markdown: kramdown
+
+
+defaults:
+  -
+    scope:
+      path: "" # empty string for all files
+    values:
+      title: MonsterSlayer
+
+description: A Place to write some words.
+author:
+  name: MonsterSlayer
+  email: dongyado@gmail.com 
+  github: dongyado
+  twitter: dongyado
+  pinterest: dongyado
+  linkedin: dongyado
+  bio: A Place to write some words. 
+  email_md5: 726351295ec82e145928582f595aa3aa
+
+rss_path: feed.xml
+categories_path: categories.html
+tags_path: tags.html
+
+BASE_PATH:
