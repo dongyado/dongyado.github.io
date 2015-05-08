@@ -1,0 +1,84 @@
+---
+layout: post
+title: mysql查询缓存
+date: 2014-08-13 00:50:04.000000000 +08:00
+categories:
+- mysql
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  views: '2'
+author:
+  login: slayer
+  email: dongyado@gmail.com
+  display_name: slayer
+  first_name: ''
+  last_name: ''
+excerpt:
+---
+
+数据库为了提升查询性能，一般都会对查询的一些过程处理结果做一定的缓存，比如查询计划缓存。
+
+<p>当数据库拿到一条sql语句之后，首先就要解析sql，分析语法，生成解析树，然后进入查询优化器生成最终的查询计划；像postgresql, sql server, oracle都会将这条语句的查询计划加入缓存池，如果下一次收到同样的sql语句，则直接跳过，解析，查询优化等步骤，转而直接执行缓存池中对应的查询计划，从而提升性能。</p>
+<p>mysql在某些场景下也能实现查询计划的缓存，但是mysql自带的查询缓存则是直接缓存查询的结果集，这样可能就要求查询的缓存内存要设置的不能过小，否则无法发挥应有的性能。</p>
+<p><strong><!--more-->缓存命中：</strong><br />
+查询缓存的命中是根据sql语句，数据库版本号等其他元素计算而成的散列值来判断的。很遗憾的是sql语句里面任何的一个不同，包括大小写，空格，注释都会导致缓存命中失败。</p>
+<p>可能有些人觉得，mysql应该预处理一下sql语句： 比如转成大写，去掉注释，去掉不必要的空格之后再计算散列值，这样可能会提高缓存的命中率。但是其实这是推卸责任，一条sql如果在一个应用里面被使用了多次，我们就应该保证它不管在哪个地方都是一模一样，每个bit都应该一样，这样缓存自然不会因为空格，大小写等不同而命中失败；所以使用统一的编码规范，或者采用程序自动生成所需的sql语句可以是我们的系统运行的更快。</p>
+<p><strong><!--more-->查询缓存的性能</strong></p>
+<p>因为mysql查询缓存是缓存的结果，所以一旦命中，则是直接从内存中返回结果，省去了解析，优化，遍历表等步骤，性能自然会有提升。但是因为缓存会因为数据库的版本号而被清掉，也就是说，只要这个发生了insert、update、delete操作，mysql会把缓存全部清空，也就是说等到下一次查询的时候重新缓存，所以查询缓存在更新很频繁的表并不适用，有时候可能会带来性能的下降。</p>
+<p>再者，既然是缓存数据结果，我们可以采用第三方的内存缓存程序在应用端缓存结果，这样还会节省了连接mysql数据库再得到结果的延迟。</p>
+<p><strong> <!--more-->查看缓存相关信息  </strong></p>
+<p>如果要使用缓存，在配置文件文件中设置query_cache_type的值，可以为OFF、ON、DEMAND，重启mysql就会生效，在客户端设置</p>
+<pre class="lang:sql"> 
+mysql&gt; set query_cache_type=ON;</pre>
+<p>只对当前客户端有效。</p>
+<p>查看缓存相关的配置信息，可以使用下面的语句查看：</p>
+<pre class="lang:sql">
+mysql&gt; show variables like '%query_cache%';
+
++------------------------------+----------+
+| Variable_name                | Value    |
++------------------------------+----------+
+| have_query_cache             | YES      |
+| query_cache_limit            | 8388608  |
+| query_cache_min_res_unit     | 4096     |
+| query_cache_size             | 16777216 |
+| query_cache_type             | ON       |
+| query_cache_wlock_invalidate | OFF      |
++------------------------------+----------+</pre>
+<p>1. query_cache_type: 是否打开缓存</p>
+<p>可选项</p>
+<p>1) OFF: 关闭</p>
+<p>2) ON: 总是打开</p>
+<p>3) DEMAND: 只有明确写了SQL_CACHE的查询才会吸入缓存</p>
+<p>2. query_cache_size: 缓存使用的总内存空间大小,单位是字节,这个值必须是1024的整数倍,否则MySQL实际分配可能跟这个数值略有不同。</p>
+<p>3. query_cache_min_res_unit: 分配内存块时的最小单位大小，选择合适的大小，可以有效的减少碎片化，这需要根据实际的查询结果的平均大小调整。</p>
+<p>4. query_cache_limit: MySQL能够缓存的最大结。</p>
+<p>5. query_cache_wlock_invalidate: 如果某个数据表被锁住,是否仍然从缓存中返回数据,默认是OFF,表示仍然可以返回。</p>
+<p>查询缓存状态可以使用下面的语句查询：</p>
+<pre class="lang:sql ">
+mysql&gt; show status like "%Qcache%";
++-------------------------+----------+
+| Variable_name           | Value    |
++-------------------------+----------+
+| Qcache_free_blocks      | 1        |
+| Qcache_free_memory      | 16768392 |
+| Qcache_hits             | 0        |
+| Qcache_inserts          | 0        |
+| Qcache_lowmem_prunes    | 0        |
+| Qcache_not_cached       | 103      |
+| Qcache_queries_in_cache | 0        |
+| Qcache_total_blocks     | 1        |
++-------------------------+----------+</pre>
+<p>参数含义如下:</p>
+<p>Qcache_free_blocks: 缓存池中空闲块的个数</p>
+<p>Qcache_free_memory: 缓存中空闲内存量</p>
+<p>Qcache_hits: 缓存命中次数</p>
+<p>Qcache_inserts: 缓存写入次数</p>
+<p>Qcache_lowmen_prunes: 因内存不足删除缓存次数</p>
+<p>Qcache_not_cached: 查询未被缓存次数,例如查询结果超出缓存块大小,查询中包含可变函数等</p>
+<p>Qcache_queries_in_cache: 当前缓存中缓存的SQL数量</p>
+<p>Qcache_total_blocks: 缓存总block数</p>

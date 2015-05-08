@@ -1,0 +1,89 @@
+---
+layout: post
+title: Ubuntu下配置awesome--高效值得拥有
+date: 2014-10-28 01:41:42.000000000 +08:00
+categories:
+- linux
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  views: '2'
+  _edit_last: '1'
+  _wp_old_slug: ! '%e4%b8%ba%e8%87%aa%e5%b7%b1%e6%89%93%e9%80%a0%e4%b8%80%e4%b8%aa%e9%ab%98%e6%95%88%e7%9a%84%e5%bc%80%e5%8f%91%e7%8e%af%e5%a2%83ubuntu'
+author:
+  login: slayer
+  email: dongyado@gmail.com
+  display_name: slayer
+  first_name: ''
+  last_name: ''
+---
+<p>从哥们那里拐来了一台坏笔记本，修好了打算替换为我服役五年的小伙伴了。</p>
+<p>不多说，肯定是装win7+ubuntu双系统，毕竟一直都用ubuntu开发，也没想换别的系统了。</p>
+<p>装好win7和ubuntu之后就开始搭自己需要的开发环境了。</p>
+<h3>一，安装awesome</h3>
+<p>如果你无法忍受unity和gnome那坑爹的速度，欢迎使用羽量级桌面窗口管理器——awesome,久闻其名，终究不如一探其真面目。</p>
+<p>在ubuntu下还是比较容易安装的:</p>
+<pre class="lang:sh decode:true">sudo apt-get install awesome</pre>
+<p>注销后就可以在登录窗口选择不同的桌面的桌面，一般awesome也会在里面，如果不在，说明你遇上了那个bug。</p>
+<h4>1. 修复登录窗口没有awesome选项，打开/usr/share/xsessions/awesome.desktop</h4>
+<pre class="lang:default decode:true">[Desktop Entry]
+Encoding=UTF-8
+Name=awesome
+Comment=Highly configurable framework window manager
+TryExec=awesome
+Exec=awesome
+NoDisplay=true
+Type=Application</pre>
+<p>把NoDisplay=true 修改成NoDisplay=false即可。</p>
+<h4>2. 多显示器支持</h4>
+<p>既然高效就要避免各种切换窗口，自然会使用多显示器，awesome天生就支持多屏幕，并且支持的很强大，使用xrandr就可以实现任意配置，xrandr可以实现很多功能，这里我之需要使用设置拓展显示器：</p>
+<pre class="lang:default decode:true">HDMI-0 disconnected (normal left inverted right x axis y axis)
+VGA-0 connected primary 1920x1080+0+0 (normal left inverted right x axis y axis) 509mm x 286mm
+   1920x1080      60.0*+
+   1680x1050      60.0  
+   1280x1024      75.0     60.0  
+   1440x900       59.9  
+   1280x960       60.0  
+   1280x720       60.0  
+   1024x768       75.1     70.1     60.0  
+   832x624        74.6  
+   800x600        72.2     75.0     60.3     56.2  
+   640x480        75.0     72.8     66.7     60.0  
+   720x400        70.1  
+DVI-0 connected 1920x1080+1920+0 (normal left inverted right x axis y axis) 510mm x 287mm
+   1920x1080      60.0*+
+   1280x1024      75.0     60.0  
+   1152x864       75.0  
+   1024x768       75.1     60.0  
+   800x600        75.0     60.3  
+   640x480        75.0     60.0  
+   720x400        70.1</pre>
+<p>但是我的拓展显示器和主显示器反过来了，所以要调换一下：</p>
+<pre class="lang:default decode:true">xrandr --output DVI-0 --left-of VGA-0 --auto</pre>
+<p>指定DVI-0是VGA-0左侧的拓展显示器， --auto表示自适应分辨率。</p>
+<p>这样一个双屏幕开发环境就搭建完成了。</p>
+<p>当然为了避免每次开机都要写上面的命令，可以在/etc/X11/Xsession.d/加一个自启动脚本:</p>
+<pre class="lang:default decode:true">#!/bin/bash 
+xrandr --output DVI-0 --left-of VGA-0 --auto</pre>
+<p>后面awesome相关的开启启动操作也都可以放在这个脚本里面。</p>
+<h4>3. 自启动程序设置</h4>
+<p>有时候需要启动一些小工具，比如网络管理器，awesome并不会启动，awesome的配置文件默认在/etc/xdg/awesome/rc.lua，可以在rc.lua末尾加上：</p>
+<pre class="lang:default decode:true ">-- Auto run programs
+autorun = true
+autorunApps = 
+{
+    "firefox",
+    "nm-applet",
+}
+if autorun then 
+    for app = 1, #autorunApps do
+        awful.util.spawn_with_shell(autorunApps[app])
+    end
+end</pre>
+<h4>4. awesome背景为黑灰色，背景图片不生效</h4>
+<p>这个问题出现的概率比较小，说明系统缺了设置背景的程序，awesome自己不会设置背景，这就需要另外装一个软件解决，可以是feh, esetroot,display等，安装好feh，就可以修复这个问题。</p>
+<h4><span style="font-size: 16px;"> 5.使用总结</span></h4>
+<p><span style="font-size: 16px;">awesome的强大的地方在于高可配置性，使用lua可以很灵活的实现用户自己想要的效果，从配置快捷键，到启动程序，定制主题等方面都做到了很大的自由，值得去尝试一下，说不定你就会爱上这个窗口管理器，另外实测使用awesome内存占用至少比ubuntu自带的unity少200M左右，而且响应速度是unity没法比的，如果你讨厌各种alt-tab切换，那马上去尝试吧。<br />
+</span></p>

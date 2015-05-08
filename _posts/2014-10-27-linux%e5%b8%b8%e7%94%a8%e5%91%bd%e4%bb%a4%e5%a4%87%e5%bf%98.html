@@ -1,0 +1,35 @@
+---
+layout: post
+title: linux常用命令备忘
+date: 2014-10-27 18:04:48.000000000 +08:00
+categories:
+- linux
+- 未分类
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+  views: '2'
+author:
+  login: slayer
+  email: dongyado@gmail.com
+  display_name: slayer
+  first_name: ''
+  last_name: ''
+---
+<h3>1. 删除过期文件</h3>
+<pre class="lang:default decode:true" title="找出临时目录下超过一天时间的文件并删除"> find /tmp/ -type f -mtime +1 -exec rm -f {} \;</pre>
+
+<p>/tmp/是路径</p>
+<p>-type 是文件类型 f 表示普通文件</p>
+<p>-mtime 表示最后修改时间 +1 表示一天之前</p>
+<p>-exec 表示执行命令 rm -f</p>
+<p>{} 表示查找到的文件名</p>
+<p>注意</p>
+<pre class="lang:default decode:true"> find /tmp/ -type f -mtime +1 -exec rm -f {} \; #{} 与 \之间必须有一个空格</pre>
+<p>结合crontab进行定时清理</p>
+<pre class="lang:default decode:true"> 0 4 * * * find /tmp/ -type f -mtime +1 -exec rm -f {} \;</pre>
+<p>表示每天凌晨4点清理。</p>
+<p>&nbsp;</p>

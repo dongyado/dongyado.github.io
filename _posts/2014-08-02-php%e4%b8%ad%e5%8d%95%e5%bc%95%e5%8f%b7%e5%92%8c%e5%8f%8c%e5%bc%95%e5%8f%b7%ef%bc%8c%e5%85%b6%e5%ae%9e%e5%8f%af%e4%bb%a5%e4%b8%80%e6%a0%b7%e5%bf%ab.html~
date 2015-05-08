@@ -1,0 +1,264 @@
+---
+layout: post
+title: PHP中单引号和双引号，其实可以一样快
+date: 2014-08-02 11:10:34.000000000 +08:00
+categories:
+- 大PHP
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+author:
+  login: slayer
+  email: dongyado@gmail.com
+  display_name: slayer
+  first_name: ''
+  last_name: ''
+---
+
+从接触PHP以来就一直有单引号比双引号的快的思想，今天看了一篇文章，也是关于单引号和双引号的测试，但是我认为那片文章没有测完整，所以自己重测了一遍，发现了一个比较有意思的问题：单引号与双引号快不快可能看写法，写法不同，产生的opcode也是不一样的，自然速度也不一样了。
+
+<p>测试环境：</p>
+<div>
+<div id="highlighter_778285">
+<table border="0" cellspacing="0" cellpadding="0">
+<tbody>
+<tr>
+<td>
+<div><span style="color: #008000;">1</span></div>
+<div><span style="color: #008000;">2</span></div>
+<div><span style="color: #008000;">3</span></div>
+<div><span style="color: #008000;">4</span></div>
+</td>
+<td>
+<div>
+<div><span style="color: #008000;"><code>    </code><code>CPU ： AMD Athlon(tm) II Dual-Core M300 &amp;times; 2</code></span></div>
+<div><span style="color: #008000;"><code>    </code><code>OS  ： ubuntu 12.04 32bit</code></span></div>
+<div><span style="color: #008000;"><code>    </code><code>PHP : PHP Version 5.3.10-1ubuntu3.10</code></span></div>
+<div><span style="color: #008000;"><code>    </code><code>tool: vld</code></span></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>代码1:</p>
+<div>
+<div id="highlighter_536562">
+<table border="0" cellspacing="0" cellpadding="0">
+<tbody>
+<tr>
+<td>
+<div><span style="color: #008000;">1</span></div>
+<div><span style="color: #008000;">2</span></div>
+<div><span style="color: #008000;">3</span></div>
+<div><span style="color: #008000;">4</span></div>
+<div><span style="color: #008000;">5</span></div>
+<div><span style="color: #008000;">6</span></div>
+<div><span style="color: #008000;">7</span></div>
+<div><span style="color: #008000;">8</span></div>
+<div><span style="color: #008000;">9</span></div>
+<div><span style="color: #008000;">10</span></div>
+<div><span style="color: #008000;">11</span></div>
+<div><span style="color: #008000;">12</span></div>
+<div><span style="color: #008000;">13</span></div>
+<div><span style="color: #008000;">14</span></div>
+<div><span style="color: #008000;">15</span></div>
+<div><span style="color: #008000;">16</span></div>
+<div><span style="color: #008000;">17</span></div>
+<div><span style="color: #008000;">18</span></div>
+</td>
+<td>
+<div>
+<div><span style="color: #008000;"><code>&lt;?php</code></span></div>
+<div><span style="color: #008000;"><code>$single_str</code> <code>= </code><code>'Hello quotes'</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>$double_str</code> <code>= </code><code>"Hello quotes"</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>echo</code> <code>$single_str</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>echo</code> <code>$double_str</code><code>;</code></span></div>
+<div><span style="color: #008000;"> </span></div>
+<div><span style="color: #008000;"><code>$tail</code> <code>= </code><code>'quotes'</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>$single_str_tail</code> <code>= </code><code>'Hello '</code><code>.</code><code>$tail</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>$double_str_tail</code> <code>= </code><code>"Hello "</code><code>.</code><code>$tail</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>echo</code> <code>$single_str_tail</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>echo</code> <code>$double_str_tail</code><code>;</code></span></div>
+<div><span style="color: #008000;"> </span></div>
+<div><span style="color: #008000;"><code>$head</code> <code>= </code><code>'Hello'</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>$single_str_head</code> <code>= </code><code>$head</code><code>.</code><code>' quotes'</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>$double_str_head</code> <code>= </code><code>$head</code><code>.</code><code>" quotes"</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>echo</code> <code>$single_str_head</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>echo</code> <code>$double_str_head</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>?&gt;</code></span></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>通过vld产生的结果如下</p>
+<div>
+<div id="highlighter_778949">
+<table border="0" cellspacing="0" cellpadding="0">
+<tbody>
+<tr>
+<td></td>
+<td>
+<div>
+<div><span style="color: #008000;"><code>line     # *  op              fetch   ext  </code><code>return</code>  <code>operands</code></span></div>
+<div><span style="color: #008000;"><code>-------------------------------------------------------------</code></span></div>
+<div><span style="color: #008000;"><code>   </code><code>2     0  &gt;   EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>         </code><code>1      ASSIGN                               !0, </code><code>'Hello+quotes'</code></span></div>
+<div><span style="color: #008000;"><code>   </code><code>3     2      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>         </code><code>3      ASSIGN                               !1, </code><code>'Hello+quotes'</code></span></div>
+<div><span style="color: #008000;"><code>   </code><code>4     4      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>         </code><code>5      </code><code>ECHO</code>                                 <code>!0</code></span></div>
+<div><span style="color: #008000;"><code>   </code><code>5     6      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>         </code><code>7      </code><code>ECHO</code>                                 <code>!1</code></span></div>
+<div><span style="color: #008000;"><code>   </code><code>7     8      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>         </code><code>9      ASSIGN                               !2, </code><code>'quotes'</code></span></div>
+<div><span style="color: #008000;"><code>   </code><code>8    10      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>11      CONCAT                       ~3      </code><code>'Hello+'</code><code>, !2</code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>12      ASSIGN                               !3, ~3</code></span></div>
+<div><span style="color: #008000;"><code>   </code><code>9    13      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>14      CONCAT                       ~5      </code><code>'Hello+'</code><code>, !2</code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>15      ASSIGN                               !4, ~5</code></span></div>
+<div><span style="color: #008000;"><code>  </code><code>10    16      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>17      </code><code>ECHO</code>                                 <code>!3</code></span></div>
+<div><span style="color: #008000;"><code>  </code><code>11    18      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>19      </code><code>ECHO</code>                                 <code>!4</code></span></div>
+<div><span style="color: #008000;"><code>  </code><code>13    20      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>21      ASSIGN                               !5, </code><code>'Hello'</code></span></div>
+<div><span style="color: #008000;"><code>  </code><code>14    22      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>23      CONCAT                       ~8      !5, </code><code>'+quotes'</code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>24      ASSIGN                               !6, ~8</code></span></div>
+<div><span style="color: #008000;"><code>  </code><code>15    25      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>26      CONCAT                       ~10     !5, </code><code>'+quotes'</code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>27      ASSIGN                               !7, ~10</code></span></div>
+<div><span style="color: #008000;"><code>  </code><code>16    28      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>29      </code><code>ECHO</code>                                 <code>!6</code></span></div>
+<div><span style="color: #008000;"><code>  </code><code>17    30      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>31      </code><code>ECHO</code>                                 <code>!7</code></span></div>
+<div><span style="color: #008000;"><code>  </code><code>20    32      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>33    &gt; RETURN                               1</code></span></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>可以发现产生的opcode都是一样的，也就是单引号和双引号是一样的，但是我们改一下代码，把双引号的部分换一种写法，也就是把变量放在双引号里面，代码2:</p>
+<div>
+<div id="highlighter_828454">
+<table border="0" cellspacing="0" cellpadding="0">
+<tbody>
+<tr>
+<td>
+<div><span style="color: #008000;">1</span></div>
+<div><span style="color: #008000;">2</span></div>
+<div><span style="color: #008000;">3</span></div>
+<div><span style="color: #008000;">4</span></div>
+<div><span style="color: #008000;">5</span></div>
+<div><span style="color: #008000;">6</span></div>
+<div><span style="color: #008000;">7</span></div>
+<div><span style="color: #008000;">8</span></div>
+<div><span style="color: #008000;">9</span></div>
+<div><span style="color: #008000;">10</span></div>
+<div><span style="color: #008000;">11</span></div>
+<div><span style="color: #008000;">12</span></div>
+<div><span style="color: #008000;">13</span></div>
+<div><span style="color: #008000;">14</span></div>
+<div><span style="color: #008000;">15</span></div>
+<div><span style="color: #008000;">16</span></div>
+<div><span style="color: #008000;">17</span></div>
+<div><span style="color: #008000;">18</span></div>
+</td>
+<td>
+<div>
+<div><span style="color: #008000;"><code>&lt;?php</code></span></div>
+<div><span style="color: #008000;"><code>$single_str</code> <code>= </code><code>'Hello quotes'</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>$double_str</code> <code>= </code><code>"Hello quotes"</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>echo</code> <code>$single_str</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>echo</code> <code>$double_str</code><code>;</code></span></div>
+<div><span style="color: #008000;"> </span></div>
+<div><span style="color: #008000;"><code>$tail</code> <code>= </code><code>'quotes'</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>$single_str_tail</code> <code>= </code><code>'Hello '</code><code>.</code><code>$tail</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>$double_str_tail</code> <code>= </code><code>"Hello $tail"</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>echo</code> <code>$single_str_tail</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>echo</code> <code>$double_str_tail</code><code>;</code></span></div>
+<div><span style="color: #008000;"> </span></div>
+<div><span style="color: #008000;"><code>$head</code> <code>= </code><code>'Hello'</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>$single_str_head</code> <code>= </code><code>$head</code><code>.</code><code>' quotes'</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>$double_str_head</code> <code>= </code><code>"$head quotes"</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>echo</code> <code>$single_str_head</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>echo</code> <code>$double_str_head</code><code>;</code></span></div>
+<div><span style="color: #008000;"><code>?&gt;</code></span></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>产生的opcode如下:</p>
+<div>
+<div id="highlighter_400607">
+<table border="0" cellspacing="0" cellpadding="0">
+<tbody>
+<tr>
+<td></td>
+<td>
+<div>
+<div><span style="color: #008000;"><code>line     # *  op              fetch   ext  </code><code>return</code>  <code>operands</code></span></div>
+<div><span style="color: #008000;"><code>-------------------------------------------------------------</code></span></div>
+<div><span style="color: #008000;"><code>   </code><code>2     0  &gt;   EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>         </code><code>1      ASSIGN                               !0, </code><code>'Hello+quotes'</code></span></div>
+<div><span style="color: #008000;"><code>   </code><code>3     2      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>         </code><code>3      ASSIGN                               !1, </code><code>'Hello+quotes'</code></span></div>
+<div><span style="color: #008000;"><code>   </code><code>4     4      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>         </code><code>5      </code><code>ECHO</code>                                 <code>!0</code></span></div>
+<div><span style="color: #008000;"><code>   </code><code>5     6      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>         </code><code>7      </code><code>ECHO</code>                                 <code>!1</code></span></div>
+<div><span style="color: #008000;"><code>   </code><code>7     8      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>         </code><code>9      ASSIGN                               !2, </code><code>'quotes'</code></span></div>
+<div><span style="color: #008000;"><code>   </code><code>8    10      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>11      CONCAT                       ~3      </code><code>'Hello+'</code><code>, !2</code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>12      ASSIGN                               !3, ~3</code></span></div>
+<div><span style="color: #008000;"><code>   </code><code>9    13      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>14      ADD_STRING                   ~5      </code><code>'Hello+'</code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>15      ADD_VAR                      ~5      ~5, !2</code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>16      ASSIGN                               !4, ~5</code></span></div>
+<div><span style="color: #008000;"><code>  </code><code>10    17      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>18      </code><code>ECHO</code>                                 <code>!3</code></span></div>
+<div><span style="color: #008000;"><code>  </code><code>11    19      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>20      </code><code>ECHO</code>                                 <code>!4</code></span></div>
+<div><span style="color: #008000;"><code>  </code><code>13    21      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>22      ASSIGN                               !5, </code><code>'Hello'</code></span></div>
+<div><span style="color: #008000;"><code>  </code><code>14    23      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>24      CONCAT                       ~8      !5, </code><code>'+quotes'</code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>25      ASSIGN                               !6, ~8</code></span></div>
+<div><span style="color: #008000;"><code>  </code><code>15    26      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>27      ADD_VAR                      ~10     !5</code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>28      ADD_STRING                   ~10     ~10, </code><code>'+quotes'</code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>29      ASSIGN                               !7, ~10</code></span></div>
+<div><span style="color: #008000;"><code>  </code><code>16    30      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>31      </code><code>ECHO</code>                                 <code>!6</code></span></div>
+<div><span style="color: #008000;"><code>  </code><code>17    32      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>33      </code><code>ECHO</code>                                 <code>!7</code></span></div>
+<div><span style="color: #008000;"><code>  </code><code>20    34      EXT_STMT                             </code></span></div>
+<div><span style="color: #008000;"><code>        </code><code>35    &gt; RETURN                               1</code></span></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>现在就能看出区别了，对比11，12以及14，15，16，或者24，25以及27，28，29，就可以发现使用单引号产生了CONCAT和ASSIGN两个动作,使用双引号产生了ADD_STRING,ADD_VAR,ASSIGN三个动作，貌似是单引号要快，因为少一个动作，但是我们还没测CONCAT 是否真的比ADD_STRING，ADD_VAR快，这个可以采用基准测试，或者直接查看对应的C函数代码比较得知。</p>
+<p>&nbsp;</p>
+<p>总结： 采用代码1中的写法，单引号和双引号的作用是一样的，速度自然也是一样的，采用代码2中的写法，单引号和双引号产生的opcode不一样，虽然多双引号的opcode多一个动作，但是单从opcode还是无法判断单引号要比双引号要快，如果是这样的话后面还是需要其他的测试。</p>
+<p>还有一种造成速度差异的是在分析语法和解释阶段，我看过的那片文章提到了这样一句话:"至于编译阶段，双引号和单引号的区别也是很大的， 我就举个数字来说明： 在scanning阶段， 对于双引号的词法规则有14条，而对于单引号，仅仅只有6条。"</p>
+<p>如果是这样的话，说明双引号在解释编译阶段要慢，那是不是可以通过opcode缓存来消除差异？</p>

@@ -1,0 +1,103 @@
+---
+layout: post
+title: linux 命令行调节音量，播放音乐
+date: 2014-11-08 01:26:23.000000000 +08:00
+categories:
+- funny
+- linux
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  views: '2'
+  _edit_last: '1'
+author:
+  login: slayer
+  email: dongyado@gmail.com
+  display_name: slayer
+  first_name: ''
+  last_name: ''
+---
+<p>最近在使用awesome，由于awesome, 并不会启动各种管理工具，包括音量管理工具，所以在命令行下调节音量对于我来说是最方便的，查了一下找到了两种方法调节音量，分别是amixer和alsmixer，应该说alsamixer是基于amixer的。</p>
+<h3>一， alsamixer</h3>
+<p>进入操作界面就可以按f6选择对应的设备，进行调节，大小的话，调节Master, Headphone, Pcm就差不多了。 按左右方向键选择，按上下方向键增加或减少音量。</p>
+<p>如果柱形图下面显示是MM说明是被关掉了，此时按方向键选择对应的选项按m键激活后会变成OO，还是很好操作。</p>
+<h3>二， amixer</h3>
+<p>如果不喜欢alsamixer，可以使用更基础的amixer，完全通过命令设置：</p>
+<pre class="lang:default decode:true">Available options:
+  -h,--help       this help
+  -c,--card N     select the card
+  -D,--device N   select the device, default 'default'
+  -d,--debug      debug mode
+  -n,--nocheck    do not perform range checking
+  -v,--version    print version of this program
+  -q,--quiet      be quiet
+  -i,--inactive   show also inactive controls
+  -a,--abstract L select abstraction level (none or basic)
+  -s,--stdin      Read and execute commands from stdin sequentially
+  -R,--raw-volume Use the raw value (default)
+  -M,--mapped-volume Use the mapped volume
+
+Available commands:
+  scontrols       show all mixer simple controls
+  scontents	  show contents of all mixer simple controls (default command)
+  sset sID P      set contents for one mixer simple control
+  sget sID        get contents for one mixer simple control
+  controls        show all controls for given card
+  contents        show contents of all controls for given card
+  cset cID P      set control contents for one control
+  cget cID        get control contents for one control</pre>
+<p>如果不知道自己使用的是哪一个声卡，可以通过 amixer -c 0，试探，后面的0表示第一个声卡，如果存在则会打印出详细的信息列表，会显示Master, Headphone, Pcm等的详细信息：</p>
+<pre class="lang:default decode:true">$ amixer -c 0
+Simple mixer control 'Master',0
+  Capabilities: pvolume pvolume-joined pswitch pswitch-joined
+  Playback channels: Mono
+  Limits: Playback 0 - 31
+  Mono: Playback 25 [81%] [-9.00dB] [on]
+Simple mixer control 'Headphone',0
+  Capabilities: pvolume pswitch
+  Playback channels: Front Left - Front Right
+  Limits: Playback 0 - 31
+  Mono:
+  Front Left: Playback 31 [100%] [0.00dB] [on]
+  Front Right: Playback 31 [100%] [0.00dB] [on]
+Simple mixer control 'Speaker',0
+  Capabilities: pvolume pswitch
+  Playback channels: Front Left - Front Right
+  Limits: Playback 0 - 31
+  Mono:
+  Front Left: Playback 31 [100%] [0.00dB] [on]
+  Front Right: Playback 31 [100%] [0.00dB] [on]
+Simple mixer control 'PCM',0
+  Capabilities: pvolume
+  Playback channels: Front Left - Front Right
+  Limits: Playback 0 - 255
+  Mono:
+  Front Left: Playback 255 [100%] [0.00dB]
+  Front Right: Playback 255 [100%] [0.00dB]
+.................</pre>
+<p>&nbsp;</p>
+<p>然后就可以设置对应选项的音量了，master指主音量，headphone就不用解释了，常用的就是选中某一个声卡，对相应的选项进行音量设置，比如减去音量10%，可以这么设置：</p>
+<pre class="lang:default decode:true">$ amixer -c 0 sset Master 10%-
+Simple mixer control 'Master',0
+  Capabilities: pvolume pvolume-joined pswitch pswitch-joined
+  Playback channels: Mono
+  Limits: Playback 0 - 31
+  Mono: Playback 21 [68%] [-15.00dB] [on]</pre>
+<p>可见音量减去了 81-68= 13，这个值并不精确，amixer只会减去大概的一个值。-c 0表示第一个声卡，sset Master 10%-表示把Master的值减去10%，如果想增加，把-替换成+，也可以直接设置成某个值，后面不加任何值就可以：</p>
+<pre class="">amixer -c 0 sset Master 10%</pre>
+<p>就直接把音量设置成了80%。</p>
+<h3>三，命令行下播放音乐(Mplayer)</h3>
+<p>gnome mplayer 基于mplayer,如果你不喜欢界面，想在命令行下播放音乐，mplayer是不错的选择。</p>
+<p>播放单个文件一次，直接指定文件路径， 播放多个文件就在后面加上别的文件</p>
+<pre class="lang:default decode:true">$ mplayer  FairyTale.mp3 IBelieveICanFly.mp3</pre>
+<p>那么问题来了，这样太麻烦了，那我们可以这么做，制定某个目录下的所有文件就可以了:</p>
+<pre class="lang:default decode:true">$ mplayer ./*</pre>
+<p>但是有个播放列表才可能是我们最希望的，因为我们不想每次都要重新添加一便，所以我们可以建立一个播放列表，后面有想听的歌曲再放进去，新建列表，并把当前目录的文件添加到播放列表：</p>
+<pre class="lang:default decode:true">$ ls ./* &gt; music.list</pre>
+<p>后面添加文件，就使用&gt;&gt;追加进行了,然后就可以播放了：</p>
+<pre class="lang:default decode:true">$ mplayer -playlist music.list</pre>
+<p>这时要注意路径问题，这里写到music.list的是相对路径，最好的最法是写绝对路径：</p>
+<pre class="lang:default decode:true">$ echo  /home/dongyado/Music/*.mp3 | sed 's/.mp3 /.mp3\n/g'  &gt; music.list</pre>
+<p>echo 会把前面的路径都会写进去，但是不会换行，只是在每个文件名之前加了空格，用.mp3\n把.mp3和后面的空格替换掉，再写入即可，这下就很方便了，尽情享受命令行下的音乐吧。</p>

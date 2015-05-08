@@ -1,0 +1,50 @@
+---
+layout: post
+title: linux定时任务cron风波
+date: 2014-10-16 00:50:06.000000000 +08:00
+categories:
+- linux
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  _edit_last: '1'
+author:
+  login: slayer
+  email: dongyado@gmail.com
+  display_name: slayer
+  first_name: ''
+  last_name: ''
+excerpt: !ruby/object:Hpricot::Doc
+  options: {}
+---
+<p><a href="http://slayer-wordpress.stor.sinaapp.com/uploads/2014/10/new.jpg"><img class="alignnone size-full wp-image-107" title="new" src="assets/new.jpg" alt="" width="995" height="617" /></a></p>
+<p>最近的工作任务涉及到一个实时数据的收集，大概是这样的一个情景，MariaDB数据库有个表会实时的记录用户的数据，而我需要从这个表中收集每个小时计算出来的增量，并存入mongoDB中，并且只保存前一天和今天的数据，这是比较简单的脚本了，脚本写好后，就需要在本机定时执行任务，需求是每5分钟执行一次更新，自然而然我们会想到cron。</p>
+<p>至于怎么使用cron的定时任务，请谷歌，应该说语法是很简单的，不会反人类。</p>
+<p>linux 下提供了一个crontab 给我们更便携个管理各个用户的定时用户，用法如下</p>
+<pre class="lang:sh decode:true">usage:	crontab [-u user] file
+	crontab [ -u user ] [ -i ] { -e | -l | -r }
+		(default operation is replace, per 1003.2)
+	-e	(edit user's crontab)
+	-l	(list user's crontab)
+	-r	(delete user's crontab)
+	-i	(prompt before deleting user's crontab)</pre>
+<p>我们需要注意个是选项-e 和-r， -e是编辑当前用户的定时任务， -r是删除当前的定时任务，因为是测试，所以我一般不会单独写一个定时脚本，所以直接使用crontab -e来添加任务，我在公司的公共测试机上添加，前面好多次都没有出现问题，今天不小心把-e 按成了-r，然后你懂的，我把公司同事添加的定时任务全部干掉了，更严重的是测试机并没有设置任何自动备份，所以无法恢复，所以我只能从日志里面去找，但是没想到，测试机上连cron日志都没开，所以这是无法恢复了，只能冒着被同事砍死的风险让他们自己添加了，好在公司同事都是玩的很好的，只是在群里黑我，也就过去了。</p>
+<p>但是我觉得这次风波至少给我带来了两个警告：</p>
+<p>1. 配置文件的日常备份都是很值得去做的，说不定哪天就手抖一下，自己辛辛苦苦写的配置文件瞬间就没有了</p>
+<p>2. 如果忘了备份，配置文件又被删了，可能日志是你最后一根救命稻草，所以日志的管理也是非常重要的。</p>
+<p>既然说到了cron日志，ubuntu默认是不开启的，要开启的话需要进入/etc/rsyslog.d/，编辑50-default.conf，去掉下面这行的#号：</p>
+<pre class="lang:default decode:true">#cron.*                         /var/log/cron.log</pre>
+<p>再重启相关服务：</p>
+<p><span style="font-size: 16px;">1.重启rsyslog服务:</span></p>
+<pre class="lang:sh decode:true">$ sudo service rsyslog restart 
+# 或
+$ sudo service rsyslog force-reload</pre>
+<p>&nbsp;</p>
+<p>2.重启cron服务 ,因为我本机没有找到restart,所以先停止再启动</p>
+<pre class="lang:default decode:true ">$ sudo service cron stop
+$ sudo service cron start</pre>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>

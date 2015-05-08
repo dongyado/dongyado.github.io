@@ -1,0 +1,57 @@
+---
+layout: post
+title: php处理cookie的一个“BUG”
+date: 2015-04-04 13:53:29.000000000 +08:00
+categories:
+- 大PHP
+tags: []
+status: publish
+type: post
+published: true
+meta:
+  views: '9'
+  _edit_last: '1'
+author:
+  login: slayer
+  email: dongyado@gmail.com
+  display_name: slayer
+  first_name: ''
+  last_name: ''
+---
+<p>最近系统升级，需要共享session，之前只有一台服务器，session 也直接以文件分区的形式存储。为了应对流量的增大，需要两台nginx+php-fpm服务器，然后两台nginx服务器共享一台memcached服务器的session，然后使用dns解析到两台nginx服务器，session共享是第一需要解决的问题。</p>
+
+<p>等写好memcache session client， 测试memcache session client并通过，然后上测试机测试的时候，出现了一个问题， 用户登录授权后，会成功写入session，但登录还是未成功，注意是已经写入session，根据sessionid，能从memcached查到对应的数据，既然client 读写都没有问题，说明处理请求的时候没有拿到session的数据，导致登录没有成功，debug发现请求带来的session_id并不是写入memcached的session_id，所以拿不到数据。</p>
+<p>既然是session_id的问题，对症下药，模拟dns解析的动作，手动配置两个域名指向同一个服务器，如： node1.test.com, node2.test.com，然后修改cookie_domain为‘.test.com’, 这样两个域名的cookie就可以共用了；用浏览器模拟登录，先用node1在服务器在session为文件存储的状态下测试，此时我能拿到一个phpsessionid，此时这个session的数据被存入了文件； 紧接着再用node2在服务器session 为memcache存储的状态下再登录一次，此时该session的数据被存入了memcache。</p>
+<p>这时候采用node1登录那个页面，其实有了两个phpsessionid，然后到了最坑的地方了，再刷新请求一次，在服务器端，可以看到sessionid是第一次产生的session_id，并不是第二次产生的session_id，我觉得不可思议，猜测PHP应该没有用最后一个phpsessionid覆盖前一个phpsessionid，而是直接把第二个忽略了。</p>
+<p>然后就去查代码，在src/main/php_variables.c里面找到了这样一段代码：</p>
+<pre class="h-align:1 lang:c decode:true">if (!index) {
+	if (zend_hash_next_index_insert(symtable1, &amp;gpc_element, sizeof(zval *), (void **) &amp;gpc_element_p) == FAILURE) {
+		zval_ptr_dtor(&amp;gpc_element);
+	}
+} else {
+	/* 
+	 * According to rfc2965, more specific paths are listed above the less specific ones.
+	 * If we encounter a duplicate cookie name, we should skip it, since it is not possible
+	 * to have the same (plain text) cookie name for the same path and we should not overwrite
+	 * more specific cookies with the less specific ones.
+	 */
+	if (PG(http_globals)[TRACK_VARS_COOKIE] &amp;&amp;
+		symtable1 == Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_COOKIE]) &amp;&amp;
+		zend_symtable_exists(symtable1, index, index_len + 1)) {
+		zval_ptr_dtor(&amp;gpc_element);
+	} else {
+		zend_symtable_update(symtable1, index, index_len + 1, &amp;gpc_element, sizeof(zval *), (void **) &amp;gpc_element_p);
+	}
+}</pre>
+<p>注意看注释：</p>
+<pre class="lang:default decode:true">/* 
+ * 
+ * If we encounter a duplicate cookie name, we should skip it, since it is not possible
+ * to have the same (plain text) cookie name for the same path and we should not overwrite
+ * more specific cookies with the less specific ones.
+ */</pre>
+<p>意思就是根据rfc2965，其它属性多的，或者其它属性值长的，排在前面，如果有重复的cookie_name，不会覆盖，而是直接忽略后面的值。所以这不是bug，这是根据协议写的。</p>
+<p>然后搜了一下PHP  是不是有关于rfc2965的bug，贴上地址，</p>
+<p><a href="https://bugs.php.net/bug.php?id=32802">Bug #32802 General cookie overrides more specific cookie (path)</a><span style="font-size: 16px;"> </span></p>
+<p>按照bug上面描述的，其实php之前确实是按照后面覆盖前面的做法来取得cookie，然后在上面的bug反应了说路径短的把路径长的覆盖了，没有按照rfc2965来处理，所以这是不对的，然后php修复了这个BUG。。</p>
+<p>而在我这个情况来说，由于session的很相似，没有其他属性，而session的值是不参与排序，所以老的session被排在前面，后面新产生的session直接被忽略了。</p>
