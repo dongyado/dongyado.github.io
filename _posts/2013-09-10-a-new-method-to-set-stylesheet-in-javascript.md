@@ -29,25 +29,35 @@ left,top 等属性。通过在JS执行过程中动态设置元素的各种属性
 每一个横杠后面的第一个字母都要大写，不过有几个特殊的，大伙可以自己查查。 
 
 假如网页中有这样一个元素： 
+
 <div  id='wrapper'> Hello JS.</div> 
+
 通过  
+
 var _wrp = document.getElementById( "wrapper"  );
 
 
 获取这个这个元素，如果要把_wrp的背景颜色，宽度分别改成黑色，和300像素，我们可以一般 
+
 会直接通过下面两句代码设置： 
-（1） 第一种方法
-```javascript
-_wrp.style.backgroundColor = "#000"; 
-_wrp.style.width = "300px"; 
-```
+
+*   第一种方法
+
+    ```javascript
+    _wrp.style.backgroundColor = "#000"; 
+    _wrp.style.width = "300px"; 
+    ```
+
 这是我们最常用的方法，大家再熟悉不过了。 
 
-（2） 第二种方法 
+*   第二种方法 
+
 这几天没事敲了一个播放连续图片以达到看电影效果的一个图片切换，做到预加载进度条的时候， 
 在设置进度条样式的时候遇到了一个麻烦，因为我是让用户自己传入一个CSS字符串，格式就是正常的 
 CSS，传进来之后，再对它进行分割到一个数组里面，达到 '属性名'=>'属性值'的程度：
+
 比如从"width:300px;background-color:#000"  
+
 分割成{ "width" => "300px", "background-color" => "#000"  }
 
 然后通过一个循环设置那个元素的样式，这样就遇到一个问题，CSS里面的属性名需要改成JS中的属 
@@ -55,26 +65,33 @@ CSS，传进来之后，再对它进行分割到一个数组里面，达到 '属
 以及一些特殊的，这就更麻烦了，不可能在设置之前弄一个很大的转换过程，效率太低了。 
 然后我突然想到，_wrp.style如果是一个数组，如果是数组那直接通过_wrp.style['属性名']赋值即可， 
 我alert了一下_wrp.style['width']，它很惊喜的弹出了前面设置的300px！！！ 
+
 这样我设置CSS就简单的多了， 
+
 直接通过 
-```javascript
-_wrp.style['width'] = '300px'; 
-_wrp.style['background-color'] = '#000'; 
-```
+
+    ```javascript
+    _wrp.style['width'] = '300px'; 
+    _wrp.style['background-color'] = '#000'; 
+    ```
 设置即可，在谷歌和火狐测试下都通过了。 
 
 这种方法至少有一下两个优点： 
-* 不需要记着JS里面那些对应的属性名，更不用说特殊的了。 
-* 如果你有一个数组，里面都是'css属性名：属性值', 这时，我们只需要通过一个循环就能达到目的，高效方便。 
+
+*   不需要记着JS里面那些对应的属性名，更不用说特殊的了。 
+*   如果你有一个数组，里面都是'css属性名：属性值', 这时，我们只需要通过一个循环就能达到目的，高效方便。 
+
 使用如下：
-```javascript
-var _style_str = "width:300px;background-color:#000"; //CSS样式字符串,注意空格问题，如果有空格后面要把空格去掉 
-var style_arr =  _style_str.split( ";"  ); //通过 ; 分割成 {"width:300px", "background-color:#000"} 
-var _wrp = document.getElementById( "wrapper"  ); //要被改变样式的元素 
- 
-for( var i = 0; i < style_arr.length; i++  ){ 
-    arr = style_arr[i].split(":"); //再次分割 
-    _wrp.style[arr[0].trim()] = arr[1]; //比如 _wrp.style['width'] = "300px" 
-}
-```
+
+    ```javascript
+    var _style_str = "width:300px;background-color:#000"; //CSS样式字符串,注意空格问题，如果有空格后面要把空格去掉 
+    var style_arr =  _style_str.split( ";"  ); //通过 ; 分割成 {"width:300px", "background-color:#000"} 
+    var _wrp = document.getElementById( "wrapper"  ); //要被改变样式的元素 
+     
+    for( var i = 0; i < style_arr.length; i++  ){ 
+        arr = style_arr[i].split(":"); //再次分割 
+        _wrp.style[arr[0].trim()] = arr[1]; //比如 _wrp.style['width'] = "300px" 
+    }
+    ```
+
 这样一个元素的样式就很好设置了！
