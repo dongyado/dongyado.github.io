@@ -43,10 +43,8 @@ var _wrp = document.getElementById( "wrapper"  );
 
 *   第一种方法
 
-    ```javascript
     _wrp.style.backgroundColor = "#000"; 
     _wrp.style.width = "300px"; 
-    ```
 
 这是我们最常用的方法，大家再熟悉不过了。 
 
@@ -70,10 +68,9 @@ CSS，传进来之后，再对它进行分割到一个数组里面，达到 '属
 
 直接通过 
 
-    ```javascript
     _wrp.style['width'] = '300px'; 
     _wrp.style['background-color'] = '#000'; 
-    ```
+
 设置即可，在谷歌和火狐测试下都通过了。 
 
 这种方法至少有一下两个优点： 
@@ -83,7 +80,6 @@ CSS，传进来之后，再对它进行分割到一个数组里面，达到 '属
 
 使用如下：
 
-    ```javascript
     var _style_str = "width:300px;background-color:#000"; //CSS样式字符串,注意空格问题，如果有空格后面要把空格去掉 
     var style_arr =  _style_str.split( ";"  ); //通过 ; 分割成 {"width:300px", "background-color:#000"} 
     var _wrp = document.getElementById( "wrapper"  ); //要被改变样式的元素 
@@ -92,6 +88,5 @@ CSS，传进来之后，再对它进行分割到一个数组里面，达到 '属
         arr = style_arr[i].split(":"); //再次分割 
         _wrp.style[arr[0].trim()] = arr[1]; //比如 _wrp.style['width'] = "300px" 
     }
-    ```
 
 这样一个元素的样式就很好设置了！
