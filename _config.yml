@@ -6,6 +6,9 @@ exclude: ["README.md"] # files to exclude
 highlighter: pygments
 markdown: kramdown
 
+sass:
+    style: :compressed
+    sass_dir: _sass
 
 defaults:
   -
