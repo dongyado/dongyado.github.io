@@ -4,7 +4,7 @@ title: javascript设置CSS样式的新方法
 date: 2013-09-10 16:50:04.000000000 +08:00
 categories:
 - 前端技术
-tags: []
+tags: [jascript, 前端]
 status: publish
 type: post
 published: true

@@ -4,7 +4,8 @@ title: linux常用命令备忘
 date: 2014-10-27 18:04:48.000000000 +08:00
 categories:
 - linux
-tags: []
+- tool
+tags: [linux]
 status: publish
 type: post
 published: true
