@@ -19,7 +19,7 @@ author:
   first_name: ''
   last_name: ''
 ---
-### 1. 删除过期文件
+#### 1. 删除过期文件
 
     find /tmp/ -type f -mtime +1 -exec rm -f {} 
 
@@ -38,7 +38,8 @@ author:
 
 表示每天凌晨4点清理。
 
-### 2. 网络带宽查看
+
+#### 2. 网络带宽查看
 
 *   nload 很好的一个工具，按TAB键切换网卡
 *   bmon 提供了很详细的带宽信息
