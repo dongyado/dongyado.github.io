@@ -30,10 +30,10 @@ author:
 
 注意
 
-    find /tmp/ -type f -mtime +1 -exec rm -f {} \; #{} 与 \之间必须有一个空格
+    find /tmp/ -type f -mtime +1 -exec rm -f {} \;  # {} 与 \之间必须有一个空格
 
 结合crontab进行定时清理
-     0 4 * * * find /tmp/ -type f -mtime +1 -exec rm -f {} 
+     0 4 * * * find /tmp/ -type f -mtime +1 -exec rm -f {} \; 
 
 表示每天凌晨4点清理。
 
