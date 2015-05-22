@@ -4,7 +4,6 @@ title: linux常用命令备忘
 date: 2014-10-27 18:04:48.000000000 +08:00
 categories:
 - linux
-- 未分类
 tags: []
 status: publish
 type: post
