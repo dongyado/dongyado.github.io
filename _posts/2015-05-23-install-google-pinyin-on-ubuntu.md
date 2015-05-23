@@ -47,7 +47,7 @@ author:
     * System Settings->Language support->input Method 设置为fcitx
     * 执行下面命令，重新设置系统输入法，选中fcitx
     
-    > im-config
+            im-config
 
 
 再说一下不入坑的安装方法，ibus没有必要卸掉，只需要改变系统默认方法就能切换，避免上述误伤的坑，如下：
