@@ -18,7 +18,7 @@ author:
   display_name: slayer
 ---
 
-#### ionic是什么？
+### ionic是什么？
 
 ionic是一个用来开发混合手机应用的，开源的，免费的代码库。可以优化html、css和js的性能，构建高效的应用程序，而且还可以用于构建Sass和AngularJS的优化。ionic会是一个可以信赖的框架。
 
@@ -37,11 +37,11 @@ ionic是一个用来开发混合手机应用的，开源的，免费的代码库
 * 因为基于angularjs， 所以之前没有接触过angular的需要熟悉一下
 
 
-#### 为什么要使用ionic?
+### 为什么要使用ionic?
 
 没接触过android,ios原生应用开发，没有时间，精力去学习，但是为了快速开发自己的app，这时候ionic就能很好的帮助我们，可以在一两周内完成自己的app。
 
-#### 安装ionic
+### 安装ionic
 
 * 安装所需环境，node.js、npm
 * 安装cordova(不过多介绍，自行脑补)，ionic
@@ -50,19 +50,19 @@ ionic是一个用来开发混合手机应用的，开源的，免费的代码库
 
 * 初始化一个名为myApp的项目，项目名后面可以指定以哪种方式初始化（blank|tabs|sidemenu）
 
-    ionic start myApp tabs
+        ionic start myApp tabs
 
 * 运行App， 会在浏览器中打开应用
     
-    cd myApp && ionic setup sass && ionic serve
+        cd myApp && ionic setup sass && ionic serve
 
 ### 安装打包环境
     
 ionic需要配置android打包环境（ios也是如此）:
-    
-    * 下载jdk
-    * 下载android sdk tools, 下载链接：http://developer.android.com/sdk/installing/index.html
-    * 配置jdk和android sdk tools，vim /etc/profile, 添加
+
+* 下载jdk
+* 下载android sdk tools, 下载链接：http://developer.android.com/sdk/installing/index.html
+* 配置jdk和android sdk tools，vim /etc/profile, 添加
 
         # for jdk
         export JAVA_HOME={your-jdk-directory}
@@ -74,7 +74,7 @@ ionic需要配置android打包环境（ios也是如此）:
         export ANDROID_HOME={your-android-sdk-directory}
         export PATH=${PATH}:ANDROID_HOME/platform-tools:ANDROID_HOME/tools
 
-    * 执行下面命令检查环境配置是否正确,找不到命令，说明配置不成功
+* 执行下面命令检查环境配置是否正确,找不到命令，说明配置不成功
 
         source /etc/profile
 
@@ -83,30 +83,30 @@ ionic需要配置android打包环境（ios也是如此）:
         android       # 是否能打开android sdk manager
 
 
-    * 执行 android命令打开android sdk manager，下载需要的sdk api, build tools
-        
-        1) 选择 API 22和最新的build tools，并点击install packages.（要翻墙）
-        2) 执行 android avd 设置安卓模拟器
-        3) 设置 API level and other config.
+* 执行 android命令打开android sdk manager，下载需要的sdk api, build tools
+    
+    * 选择 API 22和最新的build tools，并点击install packages.（要翻墙）
+    * 执行 android avd 设置安卓模拟器
+    * 设置 API level and other config.
 
 #### 一些坑
 
-    * 如果是64位的linux系统，需要为android sdk tool安装一些32位的类库
+* 如果是64位的linux系统，需要为android sdk tool安装一些32位的类库
 
         sudo apt-get install libstdc++6:i386 libgcc1:i386 zlib1g:i386 libncurses5:i386
         sudo apt-get install libsdl1.2debian:i386
 
-    * 如果发现打包的app无法打开任何url，说明忘了装插件了，在项目目录下执行
+* 如果发现打包的app无法打开任何url，说明忘了装插件了，在项目目录下执行
 
         cordova plugin add https://github.com/apache/cordova-plugin-whitelist.git
 
-    * 遇到nodejs版本过低，执行下列命令更新
+* 遇到nodejs版本过低，执行下列命令更新
 
         sudo add-apt-repository ppa:chris-lea/node.js
         sudo apt-get update
         sudo apt-get install nodejs
 
-    * 如果列表有很多条，会导致app性能很差，使用colletcion-repeat代替
+* 如果列表有很多条，会导致app性能很差，使用colletcion-repeat代替
 
 #### 打包app
     
