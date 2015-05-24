@@ -124,8 +124,8 @@ ionic需要配置android打包环境（ios也是如此）:
 
 ### 总结
     
-    ionic 社区为实现的功能提供了完善的文档，使得开发者很容易入门，建议在过了一把瘾之后把文档好好看看，可以让你开发的更得心应手。
-    
-    如果您想了解一下有哪些应用是使用ionic做的，并且想下载体验，使用下列链接从googleplay下载ionic官网展示的应用，你会大吃一惊。
+ionic 社区为实现的功能提供了完善的文档，使得开发者很容易入门，建议在过了一把瘾之后把文档好好看看，可以让你开发的更得心应手。
 
-    http://apps.evozi.com/apk-downloader/
+如果您想了解一下有哪些应用是使用ionic做的，并且想下载体验，使用下列链接从googleplay下载ionic官网展示的应用，你会大吃一惊。
+
+http://apps.evozi.com/apk-downloader/
