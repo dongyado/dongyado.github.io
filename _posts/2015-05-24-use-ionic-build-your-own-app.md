@@ -89,7 +89,7 @@ ionic需要配置android打包环境（ios也是如此）:
     * 执行 android avd 设置安卓模拟器
     * 设置 API level and other config.
 
-#### 一些坑
+### 一些坑
 
 * 如果是64位的linux系统，需要为android sdk tool安装一些32位的类库
 
@@ -108,21 +108,21 @@ ionic需要配置android打包环境（ios也是如此）:
 
 * 如果列表有很多条，会导致app性能很差，使用colletcion-repeat代替
 
-#### 打包app
+### 打包app
     
 在项目目录下执行
 
     ionic platform add android
     ionic build android
 
-#### 集成crosswalk， 让app性能提升几倍      
+### 集成crosswalk， 让app性能提升几倍      
 
 在项目目录下执行，如果添加不上，使用root执行
 
     ionic browser add crosswalk 
 
 
-#### 总结
+### 总结
     
     ionic 社区为实现的功能提供了完善的文档，使得开发者很容易入门，建议在过了一把瘾之后把文档好好看看，可以让你开发的更得心应手。
     
