@@ -18,6 +18,8 @@ author:
   display_name: slayer
   first_name: ''
   last_name: ''
+description: '数一些安装google-pinyin的坑'
+
 ---
 
 ### 踩坑

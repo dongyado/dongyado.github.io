@@ -4,7 +4,9 @@ paginate: 10 # pagination based on number of posts
 paginate_path: "page:num"
 exclude: ["README.md"] # files to exclude
 highlighter: pygments
-markdown: kramdown
+markdown: redcarpet
+redcarpet:
+      extensions: ["no_intra_emphasis", "fenced_code_blocks", "autolink", "tables", "with_toc_data"]
 
 sass:
     style: :compressed
@@ -17,7 +19,7 @@ defaults:
     values:
       title: MonsterSlayer
 
-description: A Place to write some words.
+description: 生命不止，折腾不息
 author:
   name: MonsterSlayer
   email: dongyado@gmail.com 
@@ -25,7 +27,7 @@ author:
   twitter: dongyado
   pinterest: dongyado
   linkedin: dongyado
-  bio: A Place to write some words. 
+  bio: 生命不止，折腾不息 
   email_md5: 726351295ec82e145928582f595aa3aa
 
 rss_path: feed.xml

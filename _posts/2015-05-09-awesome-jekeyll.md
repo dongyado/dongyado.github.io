@@ -14,7 +14,7 @@ author:
     login: slayer
     email: dongyado@gmail.com
     display_name: MonsterSlayer
-description: '令人惊讶的jekyll'
+description: '一个优雅的静态博客系统'
 ---
 
 之所以说jekyll令人惊喜，还把这篇文章分到funny类别，确实是被jekyll的便捷，优雅给惊讶到了。
