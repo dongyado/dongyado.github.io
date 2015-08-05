@@ -72,5 +72,13 @@ description: '数一些安装google-pinyin的坑'
 
 一般来说，这是不管用的。。。
 
+### 如果桌面上什么都没有
+
+说明是unity的配置文件出错了，把所有配置文件全部干掉并重启
+
+        sudo rm -rf .config/compiz* .gconf/apps/compiz*
+        killall gnome-session
+
 恩，填坑结束，终于不用踩别人的坑了。
+
 
