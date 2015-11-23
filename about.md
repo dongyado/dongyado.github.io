@@ -1,11 +1,30 @@
 ---
 layout: page
-title: About
+title: MonsterSlayer
 permalink: /about/
 ---
 
-This is the base Jekyll theme. You can find out more info about customizing your Jekyll theme, as well as basic Jekyll usage documentation at [jekyllrb.com](http://jekyllrb.com/)
+> “生命不止，折腾不息“。
 
-You can find the source code for the Jekyll new theme at: [github.com/jglovier/jekyll-new](https://github.com/jglovier/jekyll-new)
+## 我是谁
 
-You can find the source code for Jekyll at [github.com/jekyll/jekyll](https://github.com/jekyll/jekyll)
+程序员一枚，90年生，湖南郴州人，居住于深圳，现工作于”微头条“，任后端工程师和APP负责人。
+
+13年毕业于合肥工业大学，环境工程，大二半路出家走上程序员这条大路，因为感兴趣，所以后面三年一直打码，专业课一直低空飞过。
+
+前后端都做，现在主要做后端，喜欢后端的挑战性，架构和设计是我一直都感兴趣的东西，现在也在慢慢积累。
+
+平时主要写PHP，java也偶尔写写，服务器也折腾，什么都搞一下，并乐在其中。
+
+现在在恶补基础和算法，因为这是最能让人热血沸腾的东西，并希望自己能写出一个牛逼的东西出来。
+
+
+## 代码之余
+
+喜欢打篮球，羽毛球，虽然很渣，玩的开心才是最重要的。玩过PT，看过不少电影，喜欢科幻，谍影，和一些热血沸腾的电影，一般有评分高的片子，都会去电影院贡献一下票房。
+
+喜欢和一群志同道合的人一起努力，分享，成长。
+
+## 关于本站
+
+感谢jekyll的作者，让我可以用vim写博客，然后推到github上，太不可思议了。建议小伙伴们也试试。
