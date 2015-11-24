@@ -1,5 +1,5 @@
 ---
-layout: page
+layout: page_with_comment
 title: MonsterSlayer
 permalink: /about/
 ---
