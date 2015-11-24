@@ -120,6 +120,10 @@ article .share .gplus:hover {
 	text-shadow: 1px 1px 1px rgba(150, 150, 150, 1);
 }
 
+.page-content {
+    padding-left: 5%;
+}
+
 article{
 	margin-bottom: 40px;
     line-height: 30px;
@@ -186,6 +190,7 @@ footer {
 	font-family: 'Ubuntu';
     p {
         margin-top: 5px;
+        padding-left: 5%;
     }
 }
 
