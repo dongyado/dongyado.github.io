@@ -22,6 +22,7 @@ description: '数一些安装google-pinyin的坑'
 
 ---
 
+<!-- more -->
 ### 踩坑
 
 在ubuntu安装google-pinyin的时候，通常会按照下面的步骤进行：

@@ -21,6 +21,8 @@ description: 'A*寻路算法是一个游戏开发讨论最多，而且相当有�
 ---
 平时很少玩游戏，玩的最多的可能是老掉牙的CS和求生之路， 都是一些FPS游戏，沉迷于打打杀杀的刺激。一直知道游戏的开发是比较复杂的，也不曾去深究。
 
+<!-- more -->
+
 前段时间买了个WINDOWS平板，里面的扫雷很不错，所以玩的比较多，其中有个很奇妙的现象，那个扫雷的小人可以从障碍中（可能只有一个出口）走出来到鼠标点击的地方，想到这其中肯定应用了寻路算法。
 
 请教了一下谷歌娘，发现讨论了最多的就是A*算法，初步看了一下，觉得很有趣，就添加到了TODO list里面，准备花点时间学习一下。
@@ -129,59 +131,61 @@ G值和H值都确定了，相加即可得到F值。
 
 主要代码：
 
-        while(this.openedList.size() > 0)
-		{
-			currentPoint = getMinPoint(this.openedList);  // get current point
-			
-			this.closedList.put(currentPoint.key, currentPoint); 
-			this.openedList.remove(currentPoint.key);
-			
-			// get surrounded points
-			surroundPoints = this.traversalSurroundPoints(currentPoint);
+{% highlight java linenos %}
+while(this.openedList.size() > 0)
+{
+	currentPoint = getMinPoint(this.openedList);  // get current point
+	
+	this.closedList.put(currentPoint.key, currentPoint); 
+	this.openedList.remove(currentPoint.key);
+	
+	// get surrounded points
+	surroundPoints = this.traversalSurroundPoints(currentPoint);
+
+	it = surroundPoints.iterator();
+	
+	while(it.hasNext())
+	{
+		p = it.next();
 		
-			it = surroundPoints.iterator();
+		if (p.walkable == 1 || this.closedList.containsKey(p.key)) continue;
+		
+		// add new point to opened list
+		if (this.openedList.containsKey(p.key) == false)
+		{
+			p.parent = currentPoint;
+			p.g = 	this.getMoveType(p, currentPoint) == 1 
+					?  currentPoint.g + this.normalStepCost 
+					: currentPoint.g + this.diagonallyStepCost;
 			
-			while(it.hasNext())
-			{
-				p = it.next();
-				
-				if (p.walkable == 1 || this.closedList.containsKey(p.key)) continue;
-				
-				// add new point to opened list
-				if (this.openedList.containsKey(p.key) == false)
-				{
-					p.parent = currentPoint;
-					p.g = 	this.getMoveType(p, currentPoint) == 1 
-							?  currentPoint.g + this.normalStepCost 
+			this.openedList.put(p.key, p);
+		}
+		
+	    // check 
+		if (this.openedList.containsKey(p.key)) {
+			int tempCost = 	this.getMoveType(p, currentPoint) == 1 
+							? currentPoint.g + this.normalStepCost 
 							: currentPoint.g + this.diagonallyStepCost;
-					
-					this.openedList.put(p.key, p);
-				}
-				
-			    // check 
-				if (this.openedList.containsKey(p.key)) {
-					int tempCost = 	this.getMoveType(p, currentPoint) == 1 
-									? currentPoint.g + this.normalStepCost 
-									: currentPoint.g + this.diagonallyStepCost;
-					
-					if (p.parent != null)
-						tempCost += p.parent.g;
-					
-					// find a least step
-					if (tempCost < p.g) {
-						p.g = tempCost;
-						p.parent = currentPoint;
-					}
-				}
-				
-				// found
-				if (this.openedList.containsKey(this.end.key)){
-					this.generatePaths(this.openedList.get(this.end.key));
-					return this.path;
-				}
+			
+			if (p.parent != null)
+				tempCost += p.parent.g;
+			
+			// find a least step
+			if (tempCost < p.g) {
+				p.g = tempCost;
+				p.parent = currentPoint;
 			}
 		}
+		
+		// found
+		if (this.openedList.containsKey(this.end.key)){
+			this.generatePaths(this.openedList.get(this.end.key));
+			return this.path;
+		}
+	}
+}
 
+{%  endhighlight %}
 源代码：https://github.com/dongyado/awesome-stuff/tree/master/src/top/shares/funny/astar
 
 

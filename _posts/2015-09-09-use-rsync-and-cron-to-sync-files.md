@@ -20,6 +20,8 @@ author:
 description: '在linux下使用rsync和cron定时同步文件是一个快速简单的方法'
 ---
 
+<!-- more -->
+
 ### rsync 安装配置
 
 #### 主服务器上配置

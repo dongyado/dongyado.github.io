@@ -1,0 +1,367 @@
+---
+# main style
+---
+
+body {
+    font: 14px/18px "Helvetica Neue", Arial, sans-serif;
+    padding-bottom: 40px;
+}
+
+/** common style **/
+a {
+    text-decoration: none;
+    color: #D00;
+
+    &:hover {
+        text-decoration: none;
+    }
+}
+
+hr {
+    border-bottom: 1px solid #ccc;
+    border-top-style: none;
+}
+
+h1, h2, h3, h4, .links {
+    font-family:"Open Sans", "Helvetica Neue", Arial, sans-serif;
+}
+
+h1, h2 {
+    font-weight: 700;
+    a {
+        color: black;
+        text-decoration: none;
+
+        &:hover, &:hover {
+            text-decoration: underline;
+        }
+    }
+}
+
+em {
+    font-style: italic;
+}
+
+
+/** layout */
+.wrapper {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 30px;
+}
+
+.header {
+    padding-bottom: 15px;
+    border-bottom: 2px solid black;
+    margin: 40px auto 0 auto;
+
+    .site-title {
+        font-weight: 700;
+        font-size: 25px;
+        line-height: normal;
+        vertical-align: middle;
+        
+        h4 {height: 42px;}
+
+        a {
+            color: black;
+            text-decoration: none;
+            &:hover {
+                text-decoration: underline;
+            }
+
+        }
+
+        a, img {
+            vertical-align: middle;
+        }
+    }
+
+
+    .links {
+        margin-top: 10px;
+        font-size: 16px;
+        vertical-align: middle;
+        line-height: normal;
+        color: #777;
+        padding-left: 1px;
+        display: none;
+
+        a {
+            text-decoration: none;
+            color: #777;
+            font-weight: 600;
+            margin-right: 10px;
+            &:hover {
+                text-decoration: underline;
+            }
+            &.active {
+                color: #444;
+            }
+        }
+
+        img {
+            vertical-align: top;
+            margin-right: 2px;
+        }
+    }
+}
+
+
+.articles {
+    .article-author {
+        margin-bottom: 40px;
+        padding-top: 20px;
+        font-size: 14px;
+        border-top: 1px solid #e7e7e7;
+        overflow: auto;
+
+        .avatar {
+            float: left;
+        }
+        .name {
+            margin-top: 5px;
+            float: left;
+        }
+        h4 {
+            font-size: 18px;
+            margin-bottom: 6px;
+        }
+        h4 b {
+            font-weight: 600;
+        }
+        img {
+            border-radius: 50%;
+            vertical-align: middle;
+            margin-right: 2em;
+        }
+        span {
+            margin-right: 10px;
+        }
+    }
+}
+
+
+
+/** navi **/
+.navi {
+    width: 9em;
+    margin-left: -12em;
+    float: left;
+    text-transform: uppercase;
+    font-family: "Electrolize",sans-serif;
+
+    a {
+        display: block;
+        color: #000;
+        font-size: 1.1em;
+        padding: .7em 1em;
+        text-align: right;
+
+        &:hover, &.active{
+            color: #FFF;
+            background-color: #000;
+        }
+    }
+}
+
+
+/** main entry**/
+.entry {
+    overflow: hidden;
+    margin: 0 0 10px 0;
+
+    h1 {
+        font-weight: 700;
+    }
+
+    .entry-date,  .entry-content {
+        float: left;
+    }
+    .entry-content {
+        width: 100%;
+        overflow: hidden;
+    }
+
+    h1 {
+        font-size: 26px;
+        line-height: 30px;
+        margin-bottom: 10px;
+    }
+
+    .entry-body {
+        margin: 1em 0 1em 0;
+        font-size: 16px;
+        line-height: 27px;
+
+        strong, b {
+            font-weight: 600;
+        }
+
+        p {
+            margin: 15px 0;
+        }
+
+        p.caption {
+            font-size: 14px;
+            text-align: center;
+            font-style: italic;
+            margin-top: -5px;
+            display: block;
+        }
+
+        h2 {
+            font-size: 18px;
+        }
+
+        ul {
+            margin: 15px 0 15px 10px;
+            li {
+                list-style: disc;
+                margin-left: 2em;
+            }
+        }
+        img {
+            margin: 10px 0 0 0;
+            max-width: 100%;
+            display: block;
+        }
+    }
+
+    /** code style*/
+    pre {
+        line-height: 20px;
+        border: 2px solid #eee;
+        padding: 10px 12px;
+        white-space: pre-wrap;
+        font-size: 14px;
+
+        code {
+          border: 0;
+          padding-right: 0;
+          padding-left: 0;
+          font-size: 14px;
+        }
+    }
+
+    /* terminal */
+    pre.terminal {
+      border: 1px solid #000;
+      background-color: #333;
+      color: #FFF;
+      -webkit-border-radius: 3px;
+      -moz-border-radius: 3px;
+      border-radius: 3px;
+    }
+
+
+
+    .list-container {
+        .text-muted {
+            color: #999;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        ul li {
+            list-style-type: none; 
+        }
+    } 
+}
+
+/** post */
+.post {
+    .entry-body {
+        h2, h3, h4, h5, h6 {
+            margin-top: 40px;
+        }
+
+    }
+} 
+
+.article-meta  {
+    text-align: right;
+    margin: 15px 0 10px 0;
+    color: #999;
+}
+/** page */
+.page {
+    margin-top: 20px;
+    .entry-body {
+        margin-top: 0px;
+
+        .nav-tabs-horizontal{
+            overflow: hidden;
+            margin-top: 0px;
+            li {
+                float: left;
+            }
+        }
+    }
+}
+
+.article-list {
+    margin-top: 10px;
+    .list-year {font-size: 20px; height: 30px; line-height: 30px;}
+    .list-item {
+        font-size: 16px;
+        margin-left: 2em;
+        line-height: 30px;
+        span {color: #999}
+        a {padding: .2em 1em}
+    }
+}
+
+.rss-subscribe {
+    line-height: 36px;
+    margin: 30px auto;
+}
+
+@media all and (max-width: 1000px) {
+    #site-title img {
+        width: 25px;
+    }
+
+    .navi {display: none}
+
+    .header .links {
+        display: block;
+
+        a {
+            margin-right: 2px;
+            font-size: 14px;
+        }
+        .github-link {
+            float: none;
+        }
+        .github-link img {
+            display: none;
+        }
+    }
+
+    .wrapper {
+        padding-left: 2em;
+        padding-right: 2em;
+    }
+
+    .entry {
+        h1 {
+            font-size: 24px;
+            line-height: 28px;
+            margin-bottom: 7px;
+        }
+    }
+
+    .article-author {
+        img {
+            display: none;
+        }
+    } 
+}
+
+
+@import "base";
+@import "syntax-highlighting";
+

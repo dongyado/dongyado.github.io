@@ -20,6 +20,7 @@ author:
 description: '是一个很好的选择，但是也有几个坑需要注意一下'
 ---
 
+<!-- more -->
 ### 使用cron和scp备份数据
 
 数据多备份几份，永远也不会错。如果数据量小，又没有条件买专用的备份服务器，本地的电脑也可以作为备份机子，一则数据多了一层保障，二则备份下来的数据，也可以更新本地测试环境的数据，一举两得。
@@ -45,6 +46,7 @@ description: '是一个很好的选择，但是也有几个坑需要注意一下
 	scp输入密码可以使用key解决，这里采用了sshpass传递。
 	脚本手动执行，运行很正常。
 
+        {% highlight bash  %}
 		#!/bin/bash
 
 		# include config file
@@ -84,6 +86,8 @@ description: '是一个很好的选择，但是也有几个坑需要注意一下
 		    echo `date +%Y-%m-%d %H:%I:%S` backup ${BackupDir} failed >> $LogPath
 		fi
 		
+        {%  endhighlight %}
+
 #### cron任务
 local_backup_cron任务，放入/etc/cron.d/，在凌晨1点05分执行脚本：
 	

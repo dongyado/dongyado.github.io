@@ -1,12 +1,14 @@
 ---
 layout: page_with_comment
-title: MonsterSlayer
+title: About
 permalink: /about/
+comments: false
+author_footer: false
 ---
 
-> “生命不止，折腾不息“。
-
 ## 我是谁
+
+> “生命不止，折腾不息“。
 
 程序员一枚，90年生，湖南郴州人，居住于深圳，现工作于”微头条“，任后端工程师和APP负责人。
 

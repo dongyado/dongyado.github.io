@@ -1,37 +1,32 @@
-# visit https://github.com/mojombo/jekyll/wiki/Configuration for more settings
+# Site settings
+title: 生命不止，折腾不息
+author: MonsterSlayer
+author_avatar: /images/header.jpg
+email: alias@domain.tld
+description: 生命不止，折腾不息 
+url: "https://dongyado.github.io"
+github_username: dongyado
+github_site_repo: dongyado/dongyado.github.io
+disqus: monsterslayer
 
-paginate: 10 # pagination based on number of posts
-paginate_path: "page:num"
-exclude: ["README.md"] # files to exclude
+
+# Build settings
 highlighter: pygments
 markdown: redcarpet
 redcarpet:
-      extensions: ["no_intra_emphasis", "fenced_code_blocks", "autolink", "tables", "with_toc_data"]
+    extensions: ["no_intra_emphasis", "fenced_code_blocks", "autolink", "tables", "with_t    oc_data"]
 
 sass:
     style: :compressed
     sass_dir: _sass
 
-defaults:
-  -
-    scope:
-      path: "" # empty string for all files
-    values:
-      title: MonsterSlayer
+permalink: pretty
+excerpt_separator: "<!-- more -->"
 
-description: 生命不止，折腾不息
-author:
-  name: MonsterSlayer
-  email: dongyado@gmail.com 
-  github: dongyado
-  twitter: dongyado
-  linkedin: dongyado
-  bio: 生命不止，折腾不息 
-  email_md5: 726351295ec82e145928582f595aa3aa
+# path
+categories_path: categories/
+tags_path: tags/
 
-rss_path: feed.xml
-categories_path: categories.html
-tags_path: tags.html
-about_path: about
 
-BASE_PATH:
+gems:
+  - jekyll-sitemap

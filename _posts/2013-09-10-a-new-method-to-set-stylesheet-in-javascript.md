@@ -4,7 +4,7 @@ title: javascript设置CSS样式的新方法
 date: 2013-09-10 16:50:04.000000000 +08:00
 categories:
 - 前端技术
-tags: [jascript, 前端]
+tags: [javascript, 前端]
 status: publish
 type: post
 published: true
@@ -24,17 +24,18 @@ author:
 left,top 等属性。通过在JS执行过程中动态设置元素的各种属性，就能做出很漂亮的效果， 
 最常见莫过于图片切换，下拉菜单以及各种友好的提示框等等。 
 
+
 我们通常设置CSS的方法就是获取对象，然后通过改变JS与CSS对应的属性达到更改目的。 
 比如JS中的backgroundColor对应CSS中的background-color，采用驼峰规则改写， 
 每一个横杠后面的第一个字母都要大写，不过有几个特殊的，大伙可以自己查查。 
 
 假如网页中有这样一个元素： 
 
-<div  id='wrapper'> Hello JS.</div> 
+	<div  id='wrapper'> Hello JS.</div> 
 
 通过  
 
-var _wrp = document.getElementById( "wrapper"  );
+	var _wrp = document.getElementById( "wrapper"  );
 
 
 获取这个这个元素，如果要把_wrp的背景颜色，宽度分别改成黑色，和300像素，我们可以一般 
@@ -68,8 +69,12 @@ CSS，传进来之后，再对它进行分割到一个数组里面，达到 '属
 
 直接通过 
 
-    _wrp.style['width'] = '300px'; 
-    _wrp.style['background-color'] = '#000'; 
+{% highlight javascript %}
+
+_wrp.style['width'] = '300px';
+_wrp.style['background-color'] = '#000'; 
+
+{% endhighlight %}
 
 设置即可，在谷歌和火狐测试下都通过了。 
 
@@ -79,14 +84,15 @@ CSS，传进来之后，再对它进行分割到一个数组里面，达到 '属
 *   如果你有一个数组，里面都是'css属性名：属性值', 这时，我们只需要通过一个循环就能达到目的，高效方便。 
 
 使用如下：
+	{% highlight javascript %}
 
-    var _style_str = "width:300px;background-color:#000"; //CSS样式字符串,注意空格问题，如果有空格后面要把空格去掉 
-    var style_arr =  _style_str.split( ";"  ); //通过 ; 分割成 {"width:300px", "background-color:#000"} 
-    var _wrp = document.getElementById( "wrapper"  ); //要被改变样式的元素 
-     
-    for( var i = 0; i < style_arr.length; i++  ){ 
-        arr = style_arr[i].split(":"); //再次分割 
-        _wrp.style[arr[0].trim()] = arr[1]; //比如 _wrp.style['width'] = "300px" 
-    }
-
+var _style_str = "width:300px;background-color:#000"; //CSS样式字符串,注意空格问题，如果有空格后面要把空格去掉 
+var style_arr =  _style_str.split( ";"  ); //通过 ; 分割成 {"width:300px", "background-color:#000"} 
+var _wrp = document.getElementById( "wrapper"  ); //要被改变样式的元素 
+ 
+for( var i = 0; i < style_arr.length; i++  ){ 
+    arr = style_arr[i].split(":"); //再次分割 
+    _wrp.style[arr[0].trim()] = arr[1]; //比如 _wrp.style['width'] = "300px" 
+}
+	{% endhighlight %}
 这样一个元素的样式就很好设置了！

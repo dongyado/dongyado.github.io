@@ -21,6 +21,7 @@ description: 'ionic是一个用来开发混合手机应用的，开源的，免�
 
 ---
 
+<!-- more -->
 ### ionic是什么？
 
 ionic是一个用来开发混合手机应用的，开源的，免费的代码库。可以优化html、css和js的性能，构建高效的应用程序，而且还可以用于构建Sass和AngularJS的优化。ionic会是一个可以信赖的框架。

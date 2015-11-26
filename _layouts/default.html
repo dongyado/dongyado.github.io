@@ -1,5 +1,22 @@
----
-theme :
-  name : dbyll
----
-{% include default.html %}
+<!DOCTYPE html>
+<html>
+
+  {% include head.html %}
+
+    <body>
+    
+    <div class="wrapper">
+
+      {% include header.html %}
+      
+      {% include navi.html %}
+
+      <div class="content">
+        <div class="articles">
+            {{ content }}
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

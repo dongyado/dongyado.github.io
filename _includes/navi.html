@@ -1,15 +1,4 @@
-<header class="header">
-
-  <div class="site-title">
-    {% if page.title %}
-    <h4 class="entry-title"><a href="{{ page.url }}">{{ page.title }}</a></h4>
-    {% else%}
-    <img src="/images/logo.png" style="width: 42px;" />
-    <a href="/">{{ site.title }}</a>
-    {% endif %}
-  </div>
-
-<div class="links">
+<div class="navi">
     {% assign current = page.title %}
     <a href="/" class="page-link{% if current == null %} active{% endif %}">Blog</a>
     {% for page in site.pages %}
@@ -20,4 +9,3 @@
     {% endfor %}
     <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
 </div>
-</header>

@@ -19,6 +19,9 @@ author:
   first_name: ''
   last_name: ''
 ---
+
+<!-- more -->
+
 #### 1. 删除过期文件
 
     find /tmp/ -type f -mtime +1 -exec rm -f {} 
