@@ -9,26 +9,26 @@ status: publish
 type: post
 published: true
 ---
-jekyll是一个不可思议的博客系统，优雅，简单。i
+jekyll是一个不可思议的博客系统，优雅，简单。
 
 要用jekyll写博客，我们需要让jekyll在我们自己的电脑上跑起来。
 
 ### 搭建步骤
 这里使用的是jekyll 2.0/3.0，需要ruby2.0或以上的支持
 
-* 安装ruby2.0
+#### 安装ruby2.0
 {% highlight bash %}
 sudo apt-get install ruby2.0 ruby2.0-dev
 {% endhighlight %}
 
-* 更新gems(使用root或者sudo运行)
+#### 更新gems(使用root或者sudo运行)
 {% highlight bash %}
 gem install rubygems-update
 update_rubygems
 gem update --system
 {% endhighlight %}
 
-* 安装需要的gems
+#### 安装需要的gems
 {% highlight bash %}
 sudo gem2.0 install pygments.rb
 sudo gem2.0 install redcarpet.rb
@@ -36,7 +36,7 @@ sudo gem2.0 install redcarpet.rb
 pygments是代码高亮,redcarpet是markdown解析器
 
 
-* 安装jekyll
+#### 安装jekyll
 {% highlight bash %}
 sudo gem2.0  install jekyll
 {% endhighlight %}
@@ -62,7 +62,7 @@ https://ruby.taobao.org
 {% endhighlight %}
 出现上面的信息说明已经更换成功。
 
-* 创建一个叫my-blog的项目
+#### 创建一个叫my-blog的项目
 {% highlight bash %}
 jekyll new my-blog
 {% endhighlight %}
@@ -70,7 +70,7 @@ jekyll new my-blog
 这行命令将会产生一个my-blog的文件夹，然后我们就可以在那个文件夹里面倒腾了。
 文件结构可以看[文件目录官方文档](http://jekyllrb.com/docs/structure/)
 
-* 运行项目
+#### 运行项目
 {% highlight bash %}
 cd my-blog
 jekyll serve
