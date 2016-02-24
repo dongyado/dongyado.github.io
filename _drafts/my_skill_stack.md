@@ -19,17 +19,17 @@ description: '个人技能树，警示自己还需要掌握什么'
 Stack of skills，written for warning myself.
 
 * web前端
-    sass - CSS预处理器
-    compass - sass的样式库,框架
-    bootstrap - CSS框架
-    bootstrap-sass - 使用sass规则编写的bootstrap
-    angular.js - js框架
-    zepto.js - 简化的jquery
+    [sass][] - CSS预处理器
+    [compass][] - sass的样式库,框架
+    [bootstrap][] - CSS框架
+    [bootstrap-sass][] - 使用sass规则编写的bootstrap
+    [angular.js][] - js框架
+    [zepto.js][] - 简化的jquery
 * 后端
-    cakephp - 在国外比较流行的PHP框架
+    [cakephp][] - 在国外比较流行的PHP框架
 * 调试工具
-    postman - api调试利器
-    web developer - 前端调试利器
+    [postman][] - api调试利器
+    [web developer][] - 前端调试利器
 * 服务器
     nginx 
     php5-fpm
@@ -43,7 +43,20 @@ Stack of skills，written for warning myself.
     df
     fdisk
 * 其它好玩的
-    jekyll - 很受欢迎并且很优雅的静态博客网站生成工具
-    ionic - 使用js开发APP的框架
+    [jekyll][] - 很受欢迎并且很优雅的静态博客网站生成工具
+    [ionic][] - 使用js开发APP的框架
+
+
+[sass]: http://sass-lang.com/ 
+[compass]: http://compass-style.org/
+[bootstrap]: http://getbootstrap.com/
+[bootstrap-sass]: https://github.com/twbs/bootstrap-sass
+[angular.js]: https://angularjs.org/
+[zepto.js]: http://zeptojs.com/
+[cakephp]: http://cakephp.org/
+[postman]: https://www.getpostman.com/
+[web developer]: http://chrispederick.com/work/web-developer/
+[jekyll]: https://jekyllrb.com/
+[ionic]: http://ionicframework.com/
 
 
