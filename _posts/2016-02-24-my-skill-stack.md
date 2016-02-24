@@ -1,7 +1,7 @@
 ---
 layout: post
 title: 我的技术栈
-date: 2016-02-2409:18.000000000 +08:00
+date: 2016-02-24
 categories:
 - Funny
 tags: [Funny]
