@@ -60,7 +60,7 @@ author:
 * 开发工具
     - [postman][] - api调试利器
     - [web developer][] - 前端调试利器
-    - [git][] - 版本控制
+    - git - 版本控制
     - ab - 压力测试工具
     - siege - 更好用的压力测试工具
 	
