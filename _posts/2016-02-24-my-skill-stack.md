@@ -1,3 +1,20 @@
+---
+layout: post
+title: 我的技术栈
+date: 2016-02-2409:18.000000000 +08:00
+categories:
+- Funny
+tags: [Funny]
+status: publish
+type: post
+published: true
+author:
+  login: slayer
+  email: dongyado@gmail.com
+  display_name: slayer
+  first_name: ''
+  last_name: ''
+---
 每掌握一个技能，往栈里压一条记录。
 
 * web前端
