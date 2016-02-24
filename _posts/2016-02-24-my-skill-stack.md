@@ -15,6 +15,7 @@ author:
   first_name: ''
   last_name: ''
 ---
+
 每掌握一个技能，往栈里压一条记录。
 
 * web前端
@@ -25,7 +26,7 @@ author:
     - [angular.js][] - js框架
     - [zepto.js][] - 简化的jquery
 * 后端
-    [cakephp][] - 在国外比较流行的PHP框架
+    - [cakephp][] - 在国外比较流行的PHP框架
 
 * 服务器
     - nginx
