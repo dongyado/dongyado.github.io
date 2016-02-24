@@ -27,6 +27,8 @@ author:
     - [zepto.js][] - 简化的jquery
 * 后端
     - [cakephp][] - 在国外比较流行的PHP框架
+    - syrian - 现在使用的php框架
+    - [zephir][] - cphalcon开发出来的，以方便的形式写php扩展
 
 * 服务器
     - nginx
@@ -42,15 +44,18 @@ author:
     - logrotate - 日志处理
     - [ip2region][] - 国内IP地址查询
     - [ip2region4php][] - ip2region的php扩展
+    - [linux内核参数][] 
 	
 
 * 运维相关
+    - ulimit - 资源控制
     - htop/top - 服务器负载
     - nload - 网络负载
     - df - 磁盘使用
     - fdisk - 磁盘分区
     - sed / awk / grep - 文本处理
     - [nagios][] - 服务器监控
+    - scp - 上传文件到服务器
 	
 * 开发工具
     - [postman][] - api调试利器
@@ -80,3 +85,5 @@ author:
 [jcseg]: https://git.oschina.net/lionsoul/jcseg
 [ip2region]: https://git.oschina.net/lionsoul/ip2region
 [ip2region4php]: https://github.com/dongyado/ip2region
+[zephir]: http://zephir-lang.com/
+[linux内核参数]: http://dongyado.github.io/linux/2014/11/13/linux-core-settings/
