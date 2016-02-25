@@ -254,8 +254,6 @@ em {
       border-radius: 3px;
     }
 
-
-
     .list-container {
         .text-muted {
             color: #999;
@@ -277,7 +275,16 @@ em {
         h2, h3, h4, h5, h6 {
             margin-top: 40px;
         }
-
+        figure.highlight {
+            -webkit-margin-before:0;
+            -webkit-margin-after:0;
+            -webkit-margin-start:0;
+            -webkit-margin-end:0;
+            margin-before:0;
+            margin-after:0;
+            margin-start:0;
+            margin-end:0;
+        }
     }
 } 
 
