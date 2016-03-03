@@ -12,8 +12,6 @@ author:
   login: slayer
   email: dongyado@gmail.com
   display_name: slayer
-  first_name: ''
-  last_name: ''
 ---
 
 每掌握一个技能，往栈里压一条记录。
@@ -37,25 +35,25 @@ author:
     - elasticsearch - 数据搜索
     - [jcseg][] - 分词
     - memcached - 最广泛使用的K/V内存存储，简单易用
-    - mysqldump - 最常用的备份
+    - mysqldump - 最常用的备份1
     - iptables - 最常用的防火墙
     - crontab - 定时任务
     - autojump - 目录跳转神器， 告别无止境的tab键补全
     - logrotate - 日志处理
     - [ip2region][] - 国内IP地址查询
     - [ip2region4php][] - ip2region的php扩展
-    - [linux内核参数][] 
+    - [linux内核参数][] - 常用内核参数
 	
 
 * 运维相关
     - ulimit - 资源控制
-    - htop/top - 服务器负载
-    - nload - 网络负载
+    - htop/top - 服务器负载查看
+    - nload - 网络带宽查看
     - df - 磁盘使用
     - fdisk - 磁盘分区
     - sed / awk / grep - 文本处理
     - [nagios][] - 服务器监控
-    - scp - 上传文件到服务器
+    - scp - 文件传输
 	
 * 开发工具
     - [postman][] - api调试利器

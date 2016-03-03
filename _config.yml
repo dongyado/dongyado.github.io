@@ -26,6 +26,7 @@ excerpt_separator: "<!-- more -->"
 # path
 categories_path: categories/
 tags_path: tags/
+tags_path: links/
 
 
 gems:
