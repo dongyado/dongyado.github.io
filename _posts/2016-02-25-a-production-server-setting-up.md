@@ -20,52 +20,54 @@ author:
 
 ### 分区 - fdisk
 
-    root@iZ94u987x7zZ:/# fdisk /dev/xvdb // 需要分区的磁盘
-    Device contains neither a valid DOS partition table, nor Sun, SGI or OSF disklabel
-    Building a new DOS disklabel with disk identifier 0xe55a407e.
-    Changes will remain in memory only, until you decide to write them.
-    After that, of course, the previous content won't be recoverable.
+~~~ 
+root@iZ94u987x7zZ:/# fdisk /dev/xvdb // 需要分区的磁盘
+Device contains neither a valid DOS partition table, nor Sun, SGI or OSF disklabel
+Building a new DOS disklabel with disk identifier 0xe55a407e.
+Changes will remain in memory only, until you decide to write them.
+After that, of course, the previous content won't be recoverable.
+
+Command (m for help): n
+Partition type:
+p primary (0 primary, 0 extended, 4 free)
+e extended
+Select (default p): p // 选择主分区
+
+Partition number (1-4, default 1): 1
+First sector (2048-419430399, default 2048): 
+Using default value 2048 
+Last sector, +sectors or +size{K,M,G} (2048-419430399, default 419430399): // 全部分到一个分区
+Using default value 419430399
+
+Command (m for help): wq // 写入并退出
+The partition table has been altered!
+
+Calling ioctl() to re-read partition table.
+Syncing disks.
+
+root@iZ94u987x7zZ:/# fdisk -l // 重新列出磁盘信息
+
+Disk /dev/xvda: 21.5 GB, 21474836480 bytes
+255 heads, 63 sectors/track, 2610 cylinders, total 41943040 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0x000da36d
+
+Device Boot Start End Blocks Id System
+/dev/xvda1 * 2048 41940991 20969472 83 Linux 
+
+Disk /dev/xvdb: 214.7 GB, 214748364800 bytes // 这里是分好的分区
+86 heads, 25 sectors/track, 195083 cylinders, total 419430400 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0xe55a407e
+
+Device Boot Start End Blocks Id System
+/dev/xvdb1 2048 419430399 209714176 83 Linux
     
-    Command (m for help): n
-    Partition type:
-    p primary (0 primary, 0 extended, 4 free)
-    e extended
-    Select (default p): p // 选择主分区
-    
-    Partition number (1-4, default 1): 1
-    First sector (2048-419430399, default 2048): 
-    Using default value 2048 
-    Last sector, +sectors or +size{K,M,G} (2048-419430399, default 419430399): // 全部分到一个分区
-    Using default value 419430399
-    
-    Command (m for help): wq // 写入并退出
-    The partition table has been altered!
-    
-    Calling ioctl() to re-read partition table.
-    Syncing disks.
-    
-    root@iZ94u987x7zZ:/# fdisk -l // 重新列出磁盘信息
-    
-    Disk /dev/xvda: 21.5 GB, 21474836480 bytes
-    255 heads, 63 sectors/track, 2610 cylinders, total 41943040 sectors
-    Units = sectors of 1 * 512 = 512 bytes
-    Sector size (logical/physical): 512 bytes / 512 bytes
-    I/O size (minimum/optimal): 512 bytes / 512 bytes
-    Disk identifier: 0x000da36d
-    
-    Device Boot Start End Blocks Id System
-    /dev/xvda1 * 2048 41940991 20969472 83 Linux 
-    
-    Disk /dev/xvdb: 214.7 GB, 214748364800 bytes // 这里是分好的分区
-    86 heads, 25 sectors/track, 195083 cylinders, total 419430400 sectors
-    Units = sectors of 1 * 512 = 512 bytes
-    Sector size (logical/physical): 512 bytes / 512 bytes
-    I/O size (minimum/optimal): 512 bytes / 512 bytes
-    Disk identifier: 0xe55a407e
-    
-    Device Boot Start End Blocks Id System
-    /dev/xvdb1 2048 419430399 209714176 83 Linux
-    
+~~~
 ### 格式化磁盘
 
     root@iZ94u987x7zZ:/data0# mkfs -t ext4 /dev/xvdb1 

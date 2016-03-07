@@ -11,6 +11,5 @@ author_footer: false
 * [forsigner][] - 设计出身，node.js粉丝，前端牛人
 
 
-## 
 [狮子的魂]: http://my.oschina.net/jcseg/blog/
 [forsigner]: http://forsigner.com/

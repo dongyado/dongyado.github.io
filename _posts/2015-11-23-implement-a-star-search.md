@@ -133,7 +133,7 @@ G值和H值都确定了，相加即可得到F值。
 
 主要代码：
 
-{% highlight java  %}
+~~~ java
 while(this.openedList.size() > 0)
 {
 	currentPoint = getMinPoint(this.openedList);  // get current point
@@ -186,8 +186,8 @@ while(this.openedList.size() > 0)
 		}
 	}
 }
+~~~ 
 
-{%  endhighlight %}
 源代码：https://github.com/dongyado/awesome-stuff/tree/master/src/top/shares/funny/astar
 
 

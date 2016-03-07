@@ -33,7 +33,10 @@ gem update --system
 sudo gem2.0 install pygments.rb
 sudo gem2.0 install redcarpet.rb
 {% endhighlight %}
-pygments是代码高亮,redcarpet是markdown解析器
+
+pygments是代码高亮,redcarpet是markdown解析器。
+
+github pages 现在只支持kramdown 和rouge了，使用相同方式安装即可。
 
 
 #### 安装jekyll

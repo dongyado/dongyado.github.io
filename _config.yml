@@ -13,8 +13,9 @@ disqus: monsterslayer
 # Build settings
 highlighter: rouge
 markdown: kramdown
-redcarpet:
-    extensions: ["no_intra_emphasis", "fenced_code_blocks", "autolink", "tables", "with_t    oc_data"]
+kramdown:
+    syntax_highlighter: rouge
+    extensions: ["fenced_code_blocks", "autolink", "tables", "smart"]
 
 sass:
     style: :compressed
