@@ -14,7 +14,7 @@ author:
   display_name: slayer
 ---
 
-每掌握一个技能，往栈里压一条记录。
+掌握一个技能，往栈里压一条记录。
 
 * web前端
     - [sass][] - CSS预处理器
@@ -43,6 +43,7 @@ author:
     - [ip2region][] - 国内IP地址查询
     - [ip2region4php][] - ip2region的php扩展
     - [linux内核参数][] - 常用内核参数
+    - percona toolkit - 最好用的mysql管理工具
 	
 
 * 运维相关
