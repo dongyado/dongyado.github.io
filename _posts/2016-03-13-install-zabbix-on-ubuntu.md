@@ -1,9 +1,10 @@
 ---
 layout: post
-title: zabbix安装与配置（ubuntu 14.04）  
+title: zabbix安装与配置（ubuntu 14.04） 
 date: 2016-03-13
 categories:
 - linux
+- zabbix
 tags: [zabbix]
 status: publish
 type: post
