@@ -54,6 +54,7 @@ author:
     - fdisk - 磁盘分区
     - sed / awk / grep - 文本处理
     - [nagios][] - 服务器监控
+    - [zabbix][] - 服务器监控，简单易用
     - scp - 文件传输
 	
 * 开发工具
@@ -81,6 +82,7 @@ author:
 [jekyll]: https://jekyllrb.com/
 [ionic]: http://ionicframework.com/
 [nagios]: http://www.nagios.org/
+[zabbix]: http://www.zabbix.com/
 [jcseg]: https://git.oschina.net/lionsoul/jcseg
 [ip2region]: https://git.oschina.net/lionsoul/ip2region
 [ip2region4php]: https://github.com/dongyado/ip2region

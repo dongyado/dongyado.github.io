@@ -5,7 +5,7 @@ date: 2016-03-15
 categories:
 - linux
 - zabbix
-tags: [zabbix heirloom-mailx]
+tags: [zabbix,heirloom-mailx]
 status: publish
 type: post
 published: true
