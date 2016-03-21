@@ -4,20 +4,14 @@ title: 《黑客与画家》值得反复琢磨的话
 date: 2015-05-13 12:33:18.000000000 +08:00
 categories:
 - 学习
-tags: [黑客与画家]
+tags: [读书]
 status: publish
 type: post
 published: true
-meta:
-  _edit_last: '1'
-  _wp_old_slug: "黑客与画家" 
-  views: '1'
 author:
   login: slayer
   email: dongyado@gmail.com
   display_name: slayer
-  first_name: ''
-  last_name: ''
 ---
 
 * 创造优美的事物的方式往往不是从头做起，而是在现有成果的基础上做一些小小的调整，或者将已有的观点用比较新的方式组合起来。这种类型的工作很难用研究性的论文表达。
