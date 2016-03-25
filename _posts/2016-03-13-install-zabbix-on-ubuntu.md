@@ -25,8 +25,7 @@ Zabbix 3.0 for Ubuntu 14.04 LTS:
 
 * 安装服务端（使用mysql做数据存储）和web服务
 
-
-	# apt-get install zabbix-server-mysql zabbix-frontend-php
+        # apt-get install zabbix-server-mysql zabbix-frontend-php
 
 	在未安装apache的情况下，会遇到这个错误：
 
@@ -45,14 +44,26 @@ Zabbix 3.0 for Ubuntu 14.04 LTS:
 
 
 	1). 查看生成的 apache 主机文件
+
 	zabbix-frontend-php安装产生的apache虚拟主机配置文件在/etc/apache2/conf-available里面，然后链接到了/etc/zabbix/apache.conf。
 	该配置文件指定了 frontend-php 的web文件在 /usr/share/zabbix
 
 	2). 拷贝web文件
+
 	为了安全和方便管理，最好把 zabbix-frontend-php的web文件（/usr/share/zabbix），拷贝到nginx的web目录下。
 
 	3). 配置主机文件
-	我们需要根据/etc/zabbix/apache.conf 指定网站根目录，禁止访问一些目录，配置好后， reload nginx就可以使用了。
+    
+    3.0版本:
+
+    我们需要根据/etc/zabbix/apache.conf, 写一个nginx 的主机文件，
+	再拷贝到/etc/nginx/site-available，指定网站根目录，禁止访问一些目录，配置好后， reload nginx就可以使用了。
+
+    2.0版本：
+    安装时，已经默认拷贝了nginx的配置文件，一般在：
+    /usr/share/doc/zabbix-frontend-php/examples/nginx.conf
+    可以根据这个写个虚拟主机文件。
+    
 
 
 * 初始化数据库：
@@ -63,7 +74,7 @@ Zabbix 3.0 for Ubuntu 14.04 LTS:
 
 	1). 创建数据库：
 
-	    mysql> create database zabbix character set utf8 collate utf8_bin;
+	    mysql> create database zabbix character set utf8 collate utf8_general_ci; 
 	    mysql> insert into mysql.user(Host,User,Password) values('%','zabbix',password('zabbix'));
 	    mysql> flush privileges;
 	    mysql> grant all privileges on zabbix.* to zabbix@'%' identified by 'zabbix';
