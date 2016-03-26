@@ -67,7 +67,6 @@ author:
 * 其它好玩的
     - [jekyll][] - 很受欢迎并且很优雅的静态博客网站生成工具
     - [ionic][] - 使用js开发APP的框架
-	
 
 
 [sass]: http://sass-lang.com/ 
