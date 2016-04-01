@@ -85,7 +85,16 @@ author:
 
 运行
 
-    ./auth_overflow.o password_text
+    ⇒  ./auth_overflow.o password_text
+    start copy
+    P: password_text
+    
+    -=-=-=-=-=-=-=-=-=-=-
+     Access Granted.
+    -=-=-=-=-=-=-=-=-=-=-
+
+现在我们把密码改成17个字母， 比如17个大写的A
+
 
 但是其实里面有一个栈溢出的问题（先不管这个问题，运行起来再说）。
 gcc编译的时候已经会把栈溢出的代码优化，所以编译的时候加上-fno-stack-protector, 禁用gcc的栈溢出保护优化：
@@ -97,3 +106,10 @@ gcc编译的时候已经会把栈溢出的代码优化，所以编译的时候�
     ./auth_overflow.o password 
 
 正常的输入outgrade或者brillig测试,会输出 Access Granted
+
+size: 24 
+
+size: 25
+AAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAA AAAAA AAAAA AAAAA AAAAA
