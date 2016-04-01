@@ -39,11 +39,11 @@ author:
 
 
         // 检查是否相等
-        if (strcmp(password_buffer, "brillig") == 0){
+        if (strcmp(password_buffer, "password_text") == 0){
                 auth_flag = 1; // 1表示验证通过
         }
 
-        if (strcmp(password_buffer, "outgrade") == 0){
+        if (strcmp(password_buffer, "stackoverflow") == 0){
                 auth_flag = 1;
         }
 
@@ -79,7 +79,15 @@ author:
     #include <stdlib.h>
     #include <string.h>
 
-然后我们可以编译运行了，但是其实里面有一个栈溢出的问题（先不管这个问题，运行起来再说）。
+然后我们可以编译运行了:
+    
+    gcc -g -o auth_overflow.o auth_overflow.c 
+
+运行
+
+    ./auth_overflow.o password_text
+
+但是其实里面有一个栈溢出的问题（先不管这个问题，运行起来再说）。
 gcc编译的时候已经会把栈溢出的代码优化，所以编译的时候加上-fno-stack-protector, 禁用gcc的栈溢出保护优化：
 
     gcc -g -fno-stack-protector -o auth_overflow.o auth_overflow.c 
