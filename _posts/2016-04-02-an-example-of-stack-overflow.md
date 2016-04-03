@@ -1,6 +1,6 @@
 ---
 layout: post
-title: linux下栈溢出介绍
+title: 栈溢出的原理和如何利用
 date: 2016-03-31
 categories:
 - Linux
