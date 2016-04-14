@@ -3,8 +3,8 @@ layout: post
 title: 栈溢出的原理和利用
 date: 2016-03-31
 categories:
-- Linux
-- Funny
+- linux
+- funny
 tags: [Funny]
 status: publish
 type: post
