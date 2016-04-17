@@ -5,7 +5,7 @@ date: 2016-04-17
 categories:
 - tool
 - funny
-tags: [funny toss]
+tags: [funny,toss]
 status: publish
 type: post
 published: true

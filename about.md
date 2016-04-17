@@ -10,9 +10,9 @@ author_footer: false
 
 dongyado, 1990, ShenZhen
 
-”生命不止，折腾不息“，是一种生活态度。
+”生命不止，折腾不息“，是我的生活态度。
 
-”just for fun“ -- linus
+just for fun -- by linus
 
 我们现在所做的一切，不管现在是拼命工作，还是学习，要么为了现在好玩，要么为了将来好玩。
 
