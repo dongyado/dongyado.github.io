@@ -5,7 +5,7 @@ date: 2016-03-31
 categories:
 - linux
 - funny
-tags: [Funny]
+tags: [funny]
 status: publish
 type: post
 published: true
