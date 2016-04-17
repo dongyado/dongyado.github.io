@@ -3,8 +3,8 @@ layout: post
 title: 我的技术栈
 date: 2016-02-24
 categories:
-- Funny
-tags: [Funny]
+- funny
+tags: [funny]
 status: publish
 type: post
 published: true

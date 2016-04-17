@@ -3,7 +3,8 @@ layout: post
 title: 使用rsync和cron同步文件
 date: 2015-09-09 12:33:18.000000000 +08:00
 categories:
-- Linux Tool 
+- linux
+- tool 
 tags: [cron, rsync]
 status: publish
 type: post
