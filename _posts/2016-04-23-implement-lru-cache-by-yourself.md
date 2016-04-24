@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 实现LRU算法的原理和思路
+title: LRU算法的原理和实现
 date: 2016-04-23
 categories:
 - Algorithm
