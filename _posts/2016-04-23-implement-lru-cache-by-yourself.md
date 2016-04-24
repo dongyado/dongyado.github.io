@@ -1,7 +1,7 @@
 ---
 layout: post
 title: 实现lru算法的原理和思路
-date: 2016-04-13
+date: 2016-04-23
 categories:
 - Algorithm
 - funny
