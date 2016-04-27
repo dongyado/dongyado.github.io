@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 使用 arduino + 树莓派 实现远程控制开门 — arduino控制鸵机
+title: 使用 arduino + 树莓派 实现远程控制开门 — arduino控制舵机
 date: 2016-04-27
 categories:
 - remote-control-door
@@ -17,13 +17,15 @@ author:
 ---
 
 arduino就是一块神奇的板子，为嘛神奇，因为外行也能用它作出不可思议的东西。
-下面先介绍一下如何使用arduino控制鸵机，最终实现接电话开门的动作。
+下面先介绍一下如何使用arduino控制舵机，最终实现接电话开门的动作。
 
 
 ### 材料
 
-* 板子，某宝可入正版，90大洋能搞定
-* 鸵机，10大洋以内可入。
+* 板子，某宝可入正版，90大洋能搞定。
+* 舵机，10大洋以内可入。长这样,上面装了个桨。
+    
+ ![servo](/images/post/servo1.jpg)   
 
 ### 入门
 
@@ -48,8 +50,9 @@ arduino就是一块神奇的板子，为嘛神奇，因为外行也能用它作�
 
 GND表示ground的意思，接地； vcc 接5v电源； signal 接9号针脚。
 
+
 ### 测试
-arduino IDE自带了很多示例,选一个鸵机的示例测试一下,打开
+arduino IDE自带了很多示例,选一个舵机的示例测试一下,打开
 arduino ide -> 文件 -> 示例 -> 第三方示例 -> Servo -> sweep
 源码如下：
 
@@ -65,11 +68,11 @@ arduino ide -> 文件 -> 示例 -> 第三方示例 -> Servo -> sweep
 
 #include <Servo.h>
 
-// 创建一个servo(鸵机)控制对象
+// 创建一个servo(舵机)控制对象
 Servo myservo;  // create servo object to control a servo
 // twelve servo objects can be created on most boards
 
-// 储存鸵机位置
+// 储存舵机位置
 int pos = 0;    // variable to store the servo position
 
 // 初始化
@@ -95,21 +98,27 @@ void loop() {
 }
 ~~~
 
-如上，arduino 控制程序主要只有两个方法，setup和loop.
-setup初始化一些东西, 比如绑定鸵机到9号针脚. 
-在loop里面实现控制程序. 
+如上，arduino 控制程序主要只有两个方法，setup和loop。
+setup初始化一些东西, 比如绑定舵机到9号针脚。
+在loop里面实现控制程序。 
 
-arduino从一启动先执行setup,然后进入loop死循环,所以loop才是主战场.
+arduino从一启动先执行setup,然后进入loop死循环,所以loop才是主战场。
 
-### 控制两个鸵机,实现开门
+### 控制两个舵机,实现开门
 接电话分三个动作: 
 
 * 接 - 拿起电话,放电话的槽中有个按钮会弹起来,从而接通
 * 按 - 右侧边有个开门的按钮, 按下去,会把门打开
 * 挂 - 把电话挂掉,把第一步的那个按钮按下去
 
-所以需要两个鸵机, phoneServo否则接电话和挂电话, unlockServo负责开门.
-phoneServo需要先初始化为90度,把按钮按下去; unlockServo初始化为0度,程序如下:
+如下图摆放(做的很粗糙,拍照技术也渣),
+
+左側phoneServo否则接电话和挂电话, 右側unlockServo负责开门。 
+phoneServo需要先初始化为90度,把按钮按下去; unlockServo初始化为0度。
+
+![servo](/images/post/servo3.jpg)
+
+流程清楚了,程序也很简单,顺便加了串口通讯在里面。如下:
 
 ~~~c
 /**
@@ -120,8 +129,8 @@ phoneServo需要先初始化为90度,把按钮按下去; unlockServo初始化为
 
 #include<Servo.h>
 
-Servo unlockServo; // 开门鸵机
-Servo phoneServo;  // 电话鸵机
+Servo unlockServo; // 开门舵机
+Servo phoneServo;  // 电话舵机
 
 int pos = 0;
 
@@ -142,7 +151,7 @@ void setup() {
     unlockServo.write(0);
     phoneServo.write(maxPhonePos);
     
-    delay(200); // 延时是为了等待鸵机转动完成
+    delay(200); // 延时是为了等待舵机转动完成
     
     // disconnect
     unlockServo.detach();
@@ -211,4 +220,4 @@ void loop() {
 
 ~~~
 
-以上逻辑很简单,还加入了串口通讯,使用自带的串口监视器即可发送open或者1给arduino,到此,arduino接电话开门的动作完成,下一步要做的就是实现远程调用接口开门.
+以上逻辑很简单,还加了串口通讯,使用自带的串口监视器即可发送open或者1给arduino,到此,arduino接电话开门的动作完成,下一步要做的就是实现远程调用接口开门.
