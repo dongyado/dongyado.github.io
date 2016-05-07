@@ -77,3 +77,9 @@ arduino使用的是processing语言，和c语言很相似，关键是arduino提�
 只需要稍微了解一下电路，电阻，gnd是啥东西，就可以作出自己的想做的东西，这简直就是外行人（设计师，艺术家）的福利，可以作出各种不可思议的作品出来。
 
 Tinkering是arduino的精神，倡议先动手做，有想法就去做吧，第一次没成功，没事，tinkering it again and again, finally, it will work.
+
+相关链接：
+
+- [remote-open-door][] - 项目源码
+
+[remote-open-door]: https://github.com/dongyado/remote-open-door
