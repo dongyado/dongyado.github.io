@@ -78,8 +78,13 @@ arduino使用的是processing语言，和c语言很相似，关键是arduino提�
 
 Tinkering是arduino的精神，倡议先动手做，有想法就去做吧，第一次没成功，没事，tinkering it again and again, finally, it will work.
 
+该主题其他文章： 
+[Remote-control-door][]
+
+
 相关链接：
 
 - [remote-open-door][] - 项目源码
 
 [remote-open-door]: https://github.com/dongyado/remote-open-door
+[Remote-control-door]: http://dongyado.com/categories/#remote-control-door-ref

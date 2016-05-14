@@ -146,6 +146,9 @@ if (isset($_GET['action'])) {
 - 为api加上权限验证
 - 检测路由器IP变化并发送邮件通知的脚本
 
+该主题其他文章： 
+[Remote-control-door][]
+
 相关链接：
 
 - [remote-open-door][] - 项目源码
@@ -155,3 +158,5 @@ if (isset($_GET['action'])) {
 [PhpSerail]: https://github.com/dongyado/remote-open-door/blob/master/PhpSerial.php
 [remote-open-door]: https://github.com/dongyado/remote-open-door
 [servo]: https://github.com/dongyado/remote-open-door/blob/master/arduino_control/servo/servo.ino
+[Remote-control-door]: http://dongyado.com/categories/#remote-control-door-ref
+

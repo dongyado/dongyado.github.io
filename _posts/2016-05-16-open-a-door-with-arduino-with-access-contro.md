@@ -133,7 +133,8 @@ if ($auth) {
 
 详细代码见： [index.php][]
 
-
+该主题其他文章： 
+[Remote-control-door][]
 
 相关链接：
 
@@ -142,3 +143,4 @@ if ($auth) {
 
 [remote-open-door]: https://github.com/dongyado/remote-open-door
 [index.php]: https://github.com/dongyado/remote-open-door/blob/master/index.php
+[Remote-control-door]: http://dongyado.com/categories/#remote-control-door-ref

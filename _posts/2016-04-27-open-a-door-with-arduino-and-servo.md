@@ -222,6 +222,10 @@ void loop() {
 
 以上逻辑很简单,还加了串口通讯,使用自带的串口监视器即可发送open或者1给arduino,到此,arduino接电话开门的动作完成,下一步要做的就是实现远程调用接口开门.
 
+
+该主题其他文章： 
+[Remote-control-door][]
+
 相关链接：
 
 - [remote-open-door][] - 项目源码
@@ -229,3 +233,4 @@ void loop() {
 
 [remote-open-door]: https://github.com/dongyado/remote-open-door
 [servo]: https://github.com/dongyado/remote-open-door/blob/master/arduino_control/servo/servo.ino
+[Remote-control-door]: http://dongyado.com/categories/#remote-control-door-ref
