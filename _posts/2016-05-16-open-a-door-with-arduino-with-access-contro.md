@@ -45,7 +45,12 @@ $conf数组被定义在一个配置文件中 config.php:
 return array(
     'user'      => 'username',
     'password'  => 'password',
-    'salt'      => 'salt'
+    'salt'      => 'some strings',
+    'email'     => 'email', // email to notify when ip changed
+
+    'router_host'   => '192.168.1.1',
+    'router_user'   => 'user',
+    'router_passwd' => 'password' 
 );
 
 ?>
