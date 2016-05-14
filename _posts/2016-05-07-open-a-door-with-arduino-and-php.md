@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 使用 arduino + 树莓派 实现远程控制开门 — 调用 php api控制arduino
+title: 使用 arduino + 树莓派 实现远程控制开门 — 调用 php API控制arduino
 date: 2016-05-07
 categories:
 - remote-control-door
