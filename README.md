@@ -1,8 +1,11 @@
-A personal blog
+dongyado's blog
 =====
 
 ### 
-- A place to write thoughts and development skills.
+- notes of development
+- some thoughts.
+
+### 
 - Based on jekyll and github pages.
 
 If you like the theme of this blog, just use it.
