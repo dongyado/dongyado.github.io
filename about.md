@@ -29,6 +29,22 @@ dongyado, 1990, ShenZhen
 
 樱木花道，科比是我最喜欢的人物，他们的拼劲和执着令人动容。
 
+## 参与的项目
+
+### A. ip2region
+
+准确率99.9%的ip到地名的映射库，0.0x毫秒级查询,数据库文件大小只有1.5M, 提供了java, php, c, python， php扩展等查询客户端
+
+* [ip2region@github][]
+* [ip2region@osc][] 
+
+### B. Jcseg
+
+Jcseg是基于mmseg算法的一个轻量级中文分词器
+
+* [Jcseg@osc][] 
+* [Jcseg@github][] 
+
 
 ## 关于本站
 
@@ -39,3 +55,7 @@ dongyado, 1990, ShenZhen
  
 
 [博客源码]: https://github.com/dongyado/dongyado.github.io
+[Jcseg@github]: https://github.com/lionsoul2014/jcseg
+[Jcseg@osc]: http://git.oschina.net/lionsoul/jcseg
+[ip2region@github]: https://github.com/lionsoul2016/ip2region
+[ip2region@osc]: http://git.oschina.net/lionsoul/ip2region
