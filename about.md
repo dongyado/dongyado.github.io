@@ -25,11 +25,9 @@ dongyado, 1990, ShenZhen
 
 ## 代码之余
 
-喜欢篮球，羽毛球，电影，音乐。
+喜欢篮球，羽毛球，电影，音乐，算是程序员标配吧。
 
-樱木花道，科比是我最喜欢的人物，他们的拼劲和执着令人动容。
-
-## 参与的项目
+## 参与的开源项目
 
 ### A. ip2region
 
@@ -51,11 +49,11 @@ Jcseg是基于mmseg算法的一个轻量级中文分词器
 感谢jekyll的作者，让我可以用vim写博客，再推到github上直接发布，简单优雅易用。
 
 ## 相关链接
-[博客源码][] - 如果喜欢这个模板，可以随意使用
+[博客源码][] - 喜欢这个模板，就拿去！
  
 
 [博客源码]: https://github.com/dongyado/dongyado.github.io
 [Jcseg@github]: https://github.com/lionsoul2014/jcseg
 [Jcseg@osc]: http://git.oschina.net/lionsoul/jcseg
-[ip2region@github]: https://github.com/lionsoul2016/ip2region
+[ip2region@github]: https://github.com/lionsoul2014/ip2region
 [ip2region@osc]: http://git.oschina.net/lionsoul/ip2region
