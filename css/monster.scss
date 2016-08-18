@@ -220,7 +220,7 @@ em {
             }
         }
         img {
-            margin: 10px 0 0 0;
+            margin: 10px 0 10px 0;
             max-width: 100%;
             display: block;
         }
@@ -228,7 +228,7 @@ em {
 
     /** code style*/
     pre {
-        line-height: 20px;
+        line-height: 24px;
         border: 2px solid #eee;
         padding: 10px 12px;
         white-space: pre-wrap;
@@ -271,7 +271,7 @@ em {
 .post {
     .entry-body {
         h2, h3, h4, h5, h6 {
-            margin-top: 40px;
+            margin-top: 25px;
         }
         figure.highlight {
             -webkit-margin-before:0;

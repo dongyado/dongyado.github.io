@@ -66,38 +66,38 @@ data2:
 点击登录按钮会直接调用这个函数：
 
 ~~~javascript
-		function lgDoSub()
-		{
-			var lgPwd = id("lgPwd"), sessionValue = "";
-			var value = lgPwd.value, result, pos, errorCode;
+    function lgDoSub()
+    {
+        var lgPwd = id("lgPwd"), sessionValue = "";
+        var value = lgPwd.value, result, pos, errorCode;
 
-			/* 检查密码 */
-			if (value.length > 15 || value.length < 6)
-			{
-				showLgError(HTTP_CLIENT_NORMAL);
-				return;
-			}
+        /* 检查密码 */
+        if (value.length > 15 || value.length < 6)
+        {
+            showLgError(HTTP_CLIENT_NORMAL);
+            return;
+        }
 
-			if (!lgChkPswVal(value))
-			{
-				showLgError(HTTP_CLIENT_PSWIlegal);
-				return;
-			}
+        if (!lgChkPswVal(value))
+        {
+            showLgError(HTTP_CLIENT_PSWIlegal);
+            return;
+        }
 
-			/* 发送密码数据 */
-			result = $.auth($.orgAuthPwd(value)); // 这里调用auth函数进行认证
+        /* 发送密码数据 */
+        result = $.auth($.orgAuthPwd(value)); // 这里调用auth函数进行认证
 
-			/* 处理返回的结果 */
-			if(result.errorno == ENONE)
-			{
-				unloadLogin();
-				lgPwd.value = "";
-			}
-			else
-			{
-				showLgError(parseInt(authInfo[1]));
-			}
-		}
+        /* 处理返回的结果 */
+        if(result.errorno == ENONE)
+        {
+            unloadLogin();
+            lgPwd.value = "";
+        }
+        else
+        {
+            showLgError(parseInt(authInfo[1]));
+        }
+    }
 
 ~~~
 
