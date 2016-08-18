@@ -297,7 +297,7 @@ em {
 }
 /** page */
 .page {
-    margin-top: 20px;
+    margin-top: 5px;
     .entry-body {
         margin-top: 0px;
 
@@ -307,6 +307,14 @@ em {
             li {
                 float: left;
             }
+        }
+
+        h1,h2,h3,h4,h5,h6 {
+            margin-top: 20px;
+        }
+
+        .list-container {
+            padding-top: 10px;
         }
     }
 }
