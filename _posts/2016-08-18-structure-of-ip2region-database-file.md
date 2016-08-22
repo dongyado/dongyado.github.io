@@ -17,11 +17,55 @@ author:
 [ip2region][] 是一个准确率99.9%的ip地址定位库。
 0.0x毫秒级查询，数据库文件大小只有1.5M，提供了java, php, c, python查询客户端和Binary,B树,内存三种查询算法。
 
-本文将详细介绍ip2region的数据库文件的结构和原理，有兴趣的童鞋可以依据本文的内容写出自己的查询客户端。
+本文将分三个部分：
 
-### 一. ip2region.db 结构
+* 源数据转变成ip2region db 文件的过程
+* ip2region 的结构
+* 搜索方法
 
-如下图，有四个组成部分：
+### 一. 源数据如何存储到ip2region.db
+
+#### 1. 源数据来源与结构
+
+ip2region 的ip数据来自纯真和淘宝的ip数据库，每次抓取完成之后会生成 ip.merge.txt，
+再通过程序根据这个源文件生成ip2region.db 文件。
+
+ip.merge.txt 中每一行对应一条完整记录，每一条记录由ip段和数据组成，格式如下：
+
+    0.0.0.0|0.255.255.255|未分配或者内网IP|0|0|0|0
+    1.0.0.0|1.0.0.255|澳大利亚|0|0|0|0
+    1.0.1.0|1.0.3.255|中国|华东|福建省|福州市|电信
+    1.0.4.0|1.0.7.255|澳大利亚|0|0|0|0
+    1.0.8.0|1.0.15.255|中国|华南|广东省|广州市|电信
+    1.0.16.0|1.0.31.255|日本|0|0|0|0
+    1.0.32.0|1.0.63.255|中国|华南|广东省|广州市|电信
+    1.0.64.0|1.0.127.255|日本|0|0|0|0
+    1.0.128.0|1.0.255.255|泰国|0|0|0|0
+    1.1.0.0|1.1.0.255|中国|华东|福建省|福州市|电信
+
+从左到右分别表示： 起始ip,结束ip,国家，区域，省份，市，运营商。无数据区域默认为0。
+
+最新的ip.merge.txt 有122474条记录，并且根据开始ip地址升序排列。
+
+#### 2. 如何生成ip2region.db 
+
+给定一个ip，如何快速从ip.merge.txt中找到该ip所属记录？最简单的办法就是顺序遍历，当该ip在某条记录起始和结束ip之间时，即命中。
+
+但这肯定是最低效的做法，如何提高查询性能？用过mysql和其他数据库的的都知道，使用索引。所以ip2region.db使用了内建索引，直接将性能提升到0.0x毫秒级别。
+
+
+根据ip.merge.txt，为所有数据生成一份索引，把一些可以合并的ip段合并，并和数据地址组成一个索引项, 然后按起始ip升序排列组成索引，并存储到数据文件的末尾，最终生成的ip2region.db文件大小只有3.5M。
+
+此时的数据库文件中的每一条索引都指向一条对应的数据，也就是说如 
+
+    |中国|华南|广东省|广州市|电信 
+
+这样的数据在文件中被重复存储了很多次，而经过去重优化之后，ip2region.db只有1.5M了，此时把数据库文件全部读取到内存再查找都是非常可行的。
+
+
+### 二. ip2region.db 结构
+
+生成的ip2region.db文件包含以下四个部分：
 
 1, SUPER BLOCK  
 2, HEADER INDEX  
@@ -32,13 +76,22 @@ author:
 
 具体功能：
 
+* INDEX 
+
+    索引区域，索引元素为 index block (12 字节)， 分成三个部分，起始ip, 结束ip, 数据信息。
+    数据信息： 头部一个字节保存数据长度，后面三个字节保存数据地址（DATA中）。
+
+    每个index block 表示一个ip段的索引。当指定ip 在某个index block 的起始ip和结束ip中间，即表示命中索引。
+
+    通过 indec block中的数据地址和数据长度，就能从ip2region.db读取对应的地址。
+
 * SUPER BLOCK 
     
-    用来保存 INDEX 的起始地址和结束地址，first index ptr 指向index 头部， last index ptr 指向尾部
+    用来保存 INDEX 的起始地址和结束地址，first index ptr 指向INDEX起始位置的index block， last index ptr 指向最后一个index block的地址。这样查询的时候直接读取superblock 8个字节，就能快速获取 INDEX 索引区域的地址。
 
 * HEADER INDEX 
     
-    可以理解为一级索引(btree 搜索用到)，由连续的header index block 组成， header index block 为8个字节， 前四个字节为ip值， 后四个字节为该ip值在 INDEX 中的位置。
+    可以理解为二级索引(btree 搜索用到)，由连续的 header index block 组成， header index block 为8个字节， 前四个字节为ip值， 后四个字节为该索引在 INDEX 索引区域的地址。
 
     生成数据的时候，把 INDEX 分成 4K的连续分区，header index block 头部保存每个4K分区的第一个ip值，尾部指向该ip值的地址（即该4k分区的起始地址）
 
@@ -50,14 +103,8 @@ author:
 
     分别表示 城市ip,国家，区域，省份，城市，运营商
 
-* INDEX 
 
-    索引，索引元素为 index block (12 字节)， 分成三个部分，起始ip, 结束ip, 数据信息。
-    数据信息： 头部一个字节保存数据长度，后面三个字节保存数据地址（DATA中）。
-
-    每个index block 表示一个ip段的索引。当指定ip 在某个index block 的起始ip和结束ip中间，即表示命中索引。
-
-### 二. 搜索方法
+### 三. 搜索方法
 
 数据文件的结构是为了让搜索更快，下面介绍一下二分法查找和btree查找，便于大家加深理解。
 
@@ -143,3 +190,4 @@ b-tree 搜索用到了 HEADER INDEX，第一步先在 HEADER INDEX 中搜索，�
 
 [ip2region]: https://github.com/lionsoul2014/ip2region
 [ip2region php client]: https://github.com/lionsoul2014/ip2region/blob/master/binding/php/Ip2Region.class.php
+[ip.merge.txt]: https://github.com/lionsoul2014/ip2region/blob/master/data/ip.merge.txt
