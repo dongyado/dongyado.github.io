@@ -51,17 +51,15 @@ ip.merge.txt 中每一行对应一条完整记录，每一条记录由ip段和�
 
 给定一个ip，如何快速从ip.merge.txt中找到该ip所属记录？最简单的办法就是顺序遍历，当该ip在某条记录起始和结束ip之间时，即命中。
 
-但这肯定是最低效的做法，如何提高查询性能？用过mysql和其他数据库的的都知道，使用索引。所以ip2region.db使用了内建索引，直接将性能提升到0.0x毫秒级别。
+这是低效的做法，如何提高查询性能？用过mysql和其他数据库的的都知道，使用索引。所以ip2region.db使用了内建索引，直接将性能提升到0.0x毫秒级别。
 
-
-根据ip.merge.txt，为所有数据生成一份索引，把一些可以合并的ip段合并，并和数据地址组成一个索引项, 然后按起始ip升序排列组成索引，并存储到数据文件的末尾，最终生成的ip2region.db文件大小只有3.5M。
+根据ip.merge.txt，为所有数据生成一份索引，并和数据地址组成一个索引项(index block), 然后按起始ip升序排列组成索引，并存储到数据文件的末尾，最终生成的ip2region.db文件大小只有3.5M。
 
 此时的数据库文件中的每一条索引都指向一条对应的数据，也就是说如 
 
     |中国|华南|广东省|广州市|电信 
 
-这样的数据在文件中被重复存储了很多次，而经过去重优化之后，ip2region.db只有1.5M了，此时把数据库文件全部读取到内存再查找都是非常可行的。
-
+这样的数据在文件中被重复存储了很多次，再经过去重优化之后，ip2region.db只有1.5M了，此时把数据库文件全部读取到内存再查找都是非常可行的。
 
 ### 二. ip2region.db 结构
 
@@ -74,16 +72,25 @@ ip.merge.txt 中每一行对应一条完整记录，每一条记录由ip段和�
 
 ![image](/images/post/ip2region.db.png)
 
+生成 ip2region.db 的时候，首先会在首部预留 8 bytes 的SUPER BLOCK 和 8k 的 HEADER INDEX。
+
+再根据ip.merge.txt，依据每一条记录的起始ip, 结束ip和数据，生成一个index block， 前四个字节存储起始ip, 中间四个字节存储结束ip, 后四个字节存储已经计算出的数据地址，并暂存到INDEX区。
+
+当 INDEX 索引区和 DATA 数据区确定下来之后，再把 INDEX 的起始位置存储到 SUPER BLOCK 的前四个字节，结束位置存储到 SUPER BLOCK 的后四个字节。
+
+再把 INDEX 分成大小为 4K 的索引分区，把每个分区起始位置的索引的起始ip和该索引的位置存入一个 header index block, 组成 HEADER INDEX 区域, 最后写入ip2region.db。
+
 具体功能：
 
 * INDEX 
 
-    索引区域，索引元素为 index block (12 字节)， 分成三个部分，起始ip, 结束ip, 数据信息。
-    数据信息： 头部一个字节保存数据长度，后面三个字节保存数据地址（DATA中）。
+    索引区域，索引元素为 index block (12 字节)， 分成三个部分，起始ip, 结束ip, 数据信息, 每一条 index block 对应 ip.merge.txt 中的一条记录。
 
-    每个index block 表示一个ip段的索引。当指定ip 在某个index block 的起始ip和结束ip中间，即表示命中索引。
+    数据信息： 第一个字节保存数据长度，后三个字节保存数据地址（DATA中）。
 
-    通过 indec block中的数据地址和数据长度，就能从ip2region.db读取对应的地址。
+    每个index block 表示一个ip段的索引。当指定ip 在某个 index block 的起始ip和结束ip中间，即表示命中索引。
+
+    再通过 index block 中的数据地址和数据长度，就能从ip2region.db读取对应的地址。
 
 * SUPER BLOCK 
     
@@ -91,9 +98,14 @@ ip.merge.txt 中每一行对应一条完整记录，每一条记录由ip段和�
 
 * HEADER INDEX 
     
-    可以理解为二级索引(btree 搜索用到)，由连续的 header index block 组成， header index block 为8个字节， 前四个字节为ip值， 后四个字节为该索引在 INDEX 索引区域的地址。
+    HEADER INDEX 区是对 INDEX 区的二级索引， INDEX总长度除以 4K 就是 HEADER INDEX 的实际索引数。
+    
+    该区域长度为8k, 由 8 bytes 的 header index block 组成。 
+    
+    header index block 前四个字节存储每个4K分区起始位置的index block 的起始ip值，后四个字节指向该index block的地址。
 
-    生成数据的时候，把 INDEX 分成 4K的连续分区，header index block 头部保存每个4K分区的第一个ip值，尾部指向该ip值的地址（即该4k分区的起始地址）
+    把HEADER INDEX 区定义为8k，可以通过一次磁盘读取读取整个HEADER INDEX 区，然后在内存中进行查询，查询的结果可以确定该ip在INDEX区的某个4k分区内，然后再根据地址一次读取4k index 到内存，再在内存中查询，从而减少磁盘读取的次数。
+    
 
 * DATA 
 
@@ -105,8 +117,6 @@ ip.merge.txt 中每一行对应一条完整记录，每一条记录由ip段和�
 
 
 ### 三. 搜索方法
-
-数据文件的结构是为了让搜索更快，下面介绍一下二分法查找和btree查找，便于大家加深理解。
 
 #### binary搜索
 
