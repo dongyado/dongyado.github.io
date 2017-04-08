@@ -1,17 +1,12 @@
-<!-- 多说评论框 start -->
-<div class="ds-thread" data-thread-key="{{page.id}}" data-title="{{page.title}}" data-url="{{site.domain}}{{page.url}}"></div>
-<!-- 多说评论框 end -->
-<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
-<script type="text/javascript">
-var duoshuoQuery = {short_name:"monsterslayer"};
-(function() {
- var ds = document.createElement('script');
- ds.type = 'text/javascript';ds.async = true;
- ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
- ds.charset = 'UTF-8';
- (document.getElementsByTagName('head')[0] 
-  || document.getElementsByTagName('body')[0]).appendChild(ds);
-
- })();
+<div id="cloud-tie-wrapper" class="cloud-tie-wrapper"></div>
+<script src="https://img1.cache.netease.com/f2e/tie/yun/sdk/loader.js"></script>
+<script>
+    var cloudTieConfig = {
+        url: document.location.href,
+        sourceId: "",
+        productKey: "11d3ba17a28644019345977aba6fcbff",
+        target: "cloud-tie-wrapper"
+    };
+    var yunManualLoad = true;
+    Tie.loader("aHR0cHM6Ly9hcGkuZ2VudGllLjE2My5jb20vcGMvbGl2ZXNjcmlwdC5odG1s", true);
 </script>
-    <!-- 多说公共JS代码 end -->
