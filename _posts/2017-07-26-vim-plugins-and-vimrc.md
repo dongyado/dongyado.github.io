@@ -1,6 +1,6 @@
 ---
 layout: post
-title: .vimrc 和几款好用的插件
+title: 几款好用的 vim 插件和使用 vundle 安装 vim 插件
 date: 2017-07-26
 categories:
 - tools
@@ -17,12 +17,11 @@ author:
   display_name: slayer
 ---
 
-工欲善其事，必先利其器。
-
 vim 作为一个有历史的编辑器，经过了几十年的洗礼，依然是相当一部分程序员最喜欢的编辑器。
-这和它的高效便捷是有很大的关系，哪怕你刚开始觉得不够高效，也会有几十年留下的插件让你打造出一个适合自己的高效编辑器。
+这和它的高效便捷是有很大的关系，如何在你熟悉vim之后，你开始觉得 vim 不是很方便高效，
+这时你可以使用数量众多优质的插件打造出一个的更高效的编辑器。
 
-vim 的插件丰富多彩，我们只需选择自己需要的几款即可。
+vim 的插件丰富多彩，质量也很高，下面推荐个人觉得不错的几款插件。
 
 
 ### nerdtree
@@ -34,7 +33,7 @@ https://github.com/scrooloose/nerdtree
 
 ### nerdcommenter
 
-快速注释和删除注释，支持各种注释方法，比如 /* */ 和 //， 自然也支持块级注释，如何觉得 vim 下的多行注释很麻烦，这就是你要
+快速注释和删除注释，支持各种注释方法，比如 /* */ 和 //， 支持块级注释，如果觉得 vim 下的多行注释很麻烦，这就是你要
 找的注释插件。
 
 项目地址:
@@ -56,7 +55,7 @@ https://github.com/kien/ctrlp.vim
 
 ### YouCompleteMe
 
-很强大的自动补全引擎，支持 C-family, C#, Go, JavaScript, Python, Rust, TypeScript , 当然也可以支持其他语言。
+很强大的自动补全引擎，支持的语言包括 C-family, C#, Go, JavaScript, Python, Rust, TypeScript , 当然也可以支持其他语言。
 功能强大，比较重量级，安装起来也比较麻烦。
 
 项目和安装参见：
@@ -66,7 +65,7 @@ https://github.com/Valloric/YouCompleteMe
 
 ### vundle
 
-vim 的插件管理器，使用这个插件可以很方便的安装和卸载插件。在你决定使用 vi m的插件的时候，第一时间安装 vundle, 再使用
+vim 的插件管理器，使用这个插件可以很方便的安装和卸载插件。在你决定使用 vim 的插件的时候，先手动安装 vundle, 再使用
 vundle 安装其他插件，会帮你节省不少时间。
 
 项目和安装方法参见：
@@ -74,10 +73,15 @@ https://github.com/VundleVim/Vundle.vim
 
 ## 使用 vundle 安装插件
 
-上文的插件除了 vundle 需要手动安装，其他的都可以采用 vundle 安装。
+使用下面的命令安装 vundle:
 
-只需要在 .vimrc 中加入 vundle 的配置信息，并加入要安装的插件，再次启动 vim, 
+git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
+
+然后编辑 .vimrc, 加入 vundle 的配置信息，并加入要安装的插件，再次启动 vim, 
 执行 :PluginInstall 即可完成安装。
+
+参见文档： 
+https://github.com/VundleVim/Vundle.vim/blob/master/README_ZH_CN.md
 
 个人使用的 .vimrc 文件如下:
 ~~~
@@ -151,6 +155,6 @@ map c<space>    <plug>NERDCommenterToggle<CR>
 ~~~
 
 
-
+暂时就更新这几款插件，后面发现好用的插件会持续更新。
 
 
