@@ -32,6 +32,11 @@ Jcseg是基于mmseg算法的一个轻量级中文分词器
 * [Jcseg@osc][] 
 * [Jcseg@github][] 
 
+#### 3. friso
+
+friso是基于mmseg算法的一个轻量级中文分词器(基于C, 已支持php5,php7扩展)
+
+* [friso@github][] 
 
 ## 关于本站
 
@@ -46,3 +51,4 @@ Jcseg是基于mmseg算法的一个轻量级中文分词器
 [Jcseg@osc]: http://git.oschina.net/lionsoul/jcseg
 [ip2region@github]: https://github.com/lionsoul2014/ip2region
 [ip2region@osc]: http://git.oschina.net/lionsoul/ip2region
+[friso@github]: https://github.com/lionsoul2014/friso
