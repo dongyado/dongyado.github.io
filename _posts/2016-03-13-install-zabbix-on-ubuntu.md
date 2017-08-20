@@ -5,7 +5,7 @@ date: 2016-03-13
 categories:
 - linux
 - zabbix
-tags: [zabbix]
+tags: [zabbix, linux]
 status: publish
 type: post
 published: true

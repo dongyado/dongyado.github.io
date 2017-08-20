@@ -3,8 +3,8 @@ layout: post
 title: A*寻路的原理和实现 
 date: 2015-11-23 09:18.000000000 +08:00
 categories:
-- Algorithm
-tags: [Algorithm]
+- algorithm
+tags: [a*, search algorithm]
 status: publish
 type: post
 published: true

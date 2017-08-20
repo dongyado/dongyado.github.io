@@ -4,7 +4,7 @@ title: 《暗时间》—— 思考不需要安静的坐下来
 date: 2016-03-26 
 categories:
 - 读书 
-tags: [学习方法, 读书]
+tags: [暗时间]
 status: publish
 type: post
 published: true

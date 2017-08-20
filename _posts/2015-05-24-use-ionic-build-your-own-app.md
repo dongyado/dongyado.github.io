@@ -5,7 +5,7 @@ date: 2015-05-24 13:50:04.000000000 +08:00
 categories:
 - 前端技术
 - app
-tags: [ubuntu]
+tags: [ionic]
 status: publish
 type: post
 published: true

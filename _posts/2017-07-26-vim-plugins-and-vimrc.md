@@ -3,8 +3,8 @@ layout: post
 title: 几款好用的 vim 插件和使用 vundle 安装 vim 插件
 date: 2017-07-26
 categories:
-- tools
-tags: [linux, vim]
+- tool
+tags: [linux, vim, plugin]
 status: publish
 type: post
 published: true

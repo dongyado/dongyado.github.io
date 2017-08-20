@@ -3,8 +3,8 @@ layout: post
 title: 将网易云跟帖评论导入 disqus 
 date: 2017-08-20
 categories:
-- tools
-tags: [大php, tools]
+- tool
+tags: [转换器, 云跟帖，disqus]
 status: publish
 type: post
 published: true

@@ -3,8 +3,8 @@ layout: post
 title: ip2region 数据库文件结构及原理
 date: 2016-08-18
 categories:
-- tools
-tags: [tool, ip2region]
+- tool
+tags: [ip定位, ip查询, ip2region]
 status: publish
 type: post
 published: true

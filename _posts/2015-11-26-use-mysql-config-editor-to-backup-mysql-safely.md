@@ -4,7 +4,7 @@ title: 使用mysql-config-editor和mysqldump更安全的备份数据库
 date: 2015-11-26
 categories:
 - mysql
-tags: [mysql]
+tags: [mysql, backup]
 status: publish
 type: post
 published: true

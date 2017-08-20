@@ -3,9 +3,9 @@ layout: post
 title: LRU算法的原理和实现
 date: 2016-04-23
 categories:
-- Algorithm
+- algorithm
 - funny
-tags: [funny，Algorithm]
+tags: [lru]
 status: publish
 type: post
 published: true

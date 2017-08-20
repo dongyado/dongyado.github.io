@@ -6,7 +6,7 @@ categories:
 - remote-control-door
 - tool
 - funny
-tags: [funny,toss]
+tags: [路由器，tplink]
 status: publish
 type: post
 published: true

@@ -4,7 +4,7 @@ title: 我的技术栈
 date: 2016-02-24
 categories:
 - funny
-tags: [funny]
+tags: [skill stack]
 status: publish
 type: post
 published: true

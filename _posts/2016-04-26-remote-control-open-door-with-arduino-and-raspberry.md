@@ -6,7 +6,7 @@ categories:
 - remote-control-door
 - tool
 - funny
-tags: [funny,toss,arduino,raspberry]
+tags: [树莓派, 远程控制, arduino]
 status: publish
 type: post
 published: true

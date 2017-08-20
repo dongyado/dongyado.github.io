@@ -5,7 +5,7 @@ date: 2014-10-27 18:04:48.000000000 +08:00
 categories:
 - linux
 - tool
-tags: [linux]
+tags: [linux, command]
 status: publish
 type: post
 published: true
