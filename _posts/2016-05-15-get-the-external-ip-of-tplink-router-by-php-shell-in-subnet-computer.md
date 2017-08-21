@@ -172,7 +172,7 @@ data2:
 00003 
 00001 
 2xDsMK3]2DM4b(]J 
-L+JKFtNljcWoysK$aKf4x6Ud32kvWAWT++i)r+ITeF!U]k}u0+LM3MVd)mIn}p2zMtxi<7Wy9Vx7!x0k>GE{WMtu>a!k^7PCW+si!Ime9OvH{7Z.A0P]$LC4jF(WplrI[>0[kaBBvRPBP4GIV*au!3xa0N1Y7U^$Wgc(.xyf}BAG(Ev4Ei1sK+c{SuOpCG0^W8of}B0$+JK[oYys2]$ZXOhkb.bn!L$$>4pErmg*[kWYAgqP]sn44Fm3j
+L+JKFtNljcWoysK$aKf4x6Ud32kvWAWT++i)r+ITeF!U]k}u0+LM3MVd)mIn}p2zMtxi<7Wy9Vx7!x0k>GE{WMtu>a!k^7PCW+si!Ime9OvH{7Z.A0P]$LC4jF(WplrI[>0[kaBBvRPBP4GIV*au!3xa0N1Y7U^$Wgc(.xyf}BAG(Ev4Ei1sK+c{SuOpCG0^W8of}B0$+JK[oYys2]$ZXOhkb.bn!L$$>4pErmg*[kWYAgqP]sn44Fm3j
 ~~~
 
 最后两行分别被存储到authInfo[3]和authInfo[4]，上文this.auth函数中用到了这两个数据。
