@@ -54,7 +54,7 @@ data1:
 data2:
 
 ~~~
-00007 00003 00001 }2C2H]7Peba4sBvw ^O09j|cvO)4Eu*$~6KWnOa,c[+$5PIDi3(Ca!ni+VsKgT(N$7ZiR(DIJVp(wt5Up]0vbJ$G2kVq>46b.efn9(tTcx~Kg6swDW61qwt912h|]26cJ0(0+GgWvAh}!.]X[K.4+lDl~!UEd9PfR9vq1~ppk*komxr
+00007 00003 00001 }2C2H]7Peba4sBvw ^O09j|cvO)4Eu*$~6KWnOa,c[+$5PIDi3(Ca!ni+VsKgT(N$7ZiR(DIJVp(wt5Up]0vbJ$G2kVq>46b.efn9(tTcx~Kg6swDW61qwt912h|]26cJ0(0+GgWvAh}!.]X[K.4+lDl~!UEd9PfR9vq1~ppk*komxr
 ~~~
 
 那么很明显没用的数据完全没必要返回，认证失败返回这些信息，而且在下一次请求的时候id变了，也就是说完成了自动认证，那就说js里面肯定有个生成id的函数。
