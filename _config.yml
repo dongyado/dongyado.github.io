@@ -1,13 +1,13 @@
 # Site settings
-title: 生命不止，折腾不息
-author: MonsterSlayer
+title: Lhy的世界
+author: nicklhy
 author_avatar: /images/header.jpg
-email: alias@domain.tld
-description: 生命不止，折腾不息 
-url: "https://dongyado.github.io"
-domain: "http://dongyado.com"
-github_username: dongyado
-github_site_repo: dongyado/dongyado.github.io
+email: nicklhy@gmail.com
+description: 永远不要休息，要么就永远休息。
+url: "https://nicklhy.github.io"
+domain: "http://closure11.com"
+github_username: nicklhy
+github_site_repo: nicklhy/blog.io
 disqus: monsterslayer
 
 
