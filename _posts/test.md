@@ -2,7 +2,7 @@
 ---
 layout: post
 title: 测试
-date: 2017-10-03
+date: 2017-10-03 00:40:27.000000000 +08:00
 categories:
 - tool
 tags: [blog]
