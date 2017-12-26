@@ -17,7 +17,7 @@ rbg大神的深度神经网络检测算法系列RCNN、Fast-RCNN、Faster-RCNN�
 
   * RCNN -> Fast-RCNN -> Faster-RCNN 
   * 图片区域分析核心：ROI Pooling层 
-  * 对象bbox预测：&nbsp;Bounding-box Regression 
+  * 对象bbox预测：Bounding-box Regression 
   * 用神经网络输出proposal：RPN层 
   * Faster-RCNN训练步骤 
 
@@ -105,7 +105,7 @@ Faster-RCNN最大一点贡献应该算是其把proposal部分从网络外边嵌�
   2. Approximate joint training：这里与前一种方法不同，不再是串行训练RPN和Fast-RCNN，而是尝试把二者融入到一个网络内，具体融合的网络结构如下图所示，可以看到，proposals是由中间的RPN层输出的，而不是从网络外部得到。需要注意的一点，名字中的"approximate"是因为&ldquo;this solution ignores the derivative w.r.t. the proposal&nbsp;boxes' coordinates that are also network responses&rdquo;，也就是说，反向传播阶段RPN产生的cls score能够获得梯度用以更新参数，但是proposal的坐标预测则直接把梯度舍弃了，这个设置可以使backward时该网络层能得到一个解析解（closed results），并且相对于Alternating traing减少了25-50%的训练时间。 
   3. Non-approximate training：上面的Approximate joint training把proposal的坐标预测梯度直接舍弃，所以被称作approximate，那么理论上如果不舍弃是不是能更好的提升RPN部分网络的性能呢？作者把这种训练方式称为&ldquo;&nbsp;Non-approximate joint training&rdquo;，但是此方法在paper中只是一笔带过，表示&ldquo;This is a nontrivial problem and&nbsp;&nbsp;a solution can be given by an &ldquo;RoI warping&rdquo; layer&nbsp;as developed in [15], which is beyond the scope of this paper&rdquo;，o(╯□╰)o 
 
-<a href="/images/post/2016/03/FasterRCNN_train.png" rel="attachment wp-att-756" style="" target="" title=""><figure id="attachment_756" style="max-width: 288px" class="wp-caption aligncenter"><img src="/images/post/2016/03/FasterRCNN_train-288x300.png" alt="Approximate joint training" width="288" height="300" class="size-medium wp-image-756 wp-caption aligncenter" title="Approximate joint training" style="" srcset="/images/post/2016/03/FasterRCNN_train-288x300.png 288w, /images/post/2016/03/FasterRCNN_train.png 624w" sizes="(max-width: 288px) 100vw, 288px" /><figcaption class="wp-caption-text">Approximate joint training</figcaption></figure></a> 
+<a href="/images/post/2016/03/FasterRCNN_train.png" rel="attachment wp-att-756" style="" target="" title=""><figure id="attachment_756" style="max-width: 288px" class="wp-caption aligncenter"><img src="/images/post/2016/03/FasterRCNN_train-288x300.png" alt="Approximate joint training" width="288" height="300" class="size-medium wp-image-756 wp-caption aligncenter" title="Approximate joint training" style="" srcset="/images/post/2016/03/FasterRCNN_train-288x300.png 288w, /images/post/2016/03/FasterRCNN_train.png 624w" sizes="(max-width: 288px) 100vw, 288px" /></figure></a> 
 
 上面说完了三种可能的训练方法，可非常神奇的是作者发布的源代码里却傲娇的用了另外一种叫做4-Step Alternating Training的方法，思路和迭代的Alternating training有点类似，但是细节有点差别（rbg大神这样介绍训练方式我也是醉了），具体来说： 
 
