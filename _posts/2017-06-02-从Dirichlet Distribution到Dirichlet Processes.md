@@ -4,7 +4,6 @@ title: 从Dirichlet Distribution到Dirichlet Processes
 date: 2017-06-02T14:13:15+00:00
 author: nicklhy
 layout: post
-guid: http://closure11.com/?p=1034
 permalink: '/%e4%bb%8edirichlet-distribution%e5%88%b0dirichlet-processes/'
 views:
   - "36"

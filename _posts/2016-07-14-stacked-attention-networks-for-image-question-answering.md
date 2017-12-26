@@ -4,7 +4,6 @@ title: 使用Stacked Attention Networks进行图片QA(paper reading)
 date: 2016-07-14T17:05:47+00:00
 author: nicklhy
 layout: post
-guid: http://closure11.com/?p=770
 permalink: /stacked-attention-networks-for-image-question-answering/
 views:
   - "662"

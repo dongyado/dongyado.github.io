@@ -4,7 +4,6 @@ title: Structural SVM原理分析
 date: 2014-06-19T23:51:20+00:00
 author: nicklhy
 layout: post
-guid: http://nicklhy.tk/?p=57
 permalink: /structural-svm/
 views:
   - "1183"

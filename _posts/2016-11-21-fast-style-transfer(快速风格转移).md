@@ -4,7 +4,6 @@ title: Fast Style Transfer(快速风格转移)
 date: 2016-11-21T17:29:05+00:00
 author: nicklhy
 layout: post
-guid: http://closure11.com/?p=917
 permalink: '/fast-style-transfer%e5%bf%ab%e9%80%9f%e9%a3%8e%e6%a0%bc%e8%bd%ac%e7%a7%bb/'
 views:
   - "791"

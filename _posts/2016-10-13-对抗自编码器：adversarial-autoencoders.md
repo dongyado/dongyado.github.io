@@ -4,7 +4,6 @@ title: 对抗自编码器：Adversarial Autoencoders
 date: 2016-10-13T12:51:47+00:00
 author: nicklhy
 layout: post
-guid: http://closure11.com/?p=876
 permalink: '/%e5%af%b9%e6%8a%97%e8%87%aa%e7%bc%96%e7%a0%81%e5%99%a8%ef%bc%9aadversarial-autoencoders/'
 views:
   - "1081"

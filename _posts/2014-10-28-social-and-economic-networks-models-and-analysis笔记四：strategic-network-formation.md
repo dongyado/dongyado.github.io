@@ -4,7 +4,6 @@ title: 'Social and Economic Networks: Models and Analysis笔记四：Strategic N
 date: 2014-10-28T17:31:10+00:00
 author: nicklhy
 layout: post
-guid: http://closure11.com/?p=402
 permalink: '/social-and-economic-networks-models-and-analysis%e7%ac%94%e8%ae%b0%e5%9b%9b%ef%bc%9astrategic-network-formation/'
 views:
   - "93"

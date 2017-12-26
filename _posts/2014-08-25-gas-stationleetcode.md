@@ -4,7 +4,6 @@ title: Gas Station(LeetCode)
 date: 2014-08-25T17:49:36+00:00
 author: nicklhy
 layout: post
-guid: http://closure11.com/?p=202
 permalink: /gas-stationleetcode/
 views:
   - "72"

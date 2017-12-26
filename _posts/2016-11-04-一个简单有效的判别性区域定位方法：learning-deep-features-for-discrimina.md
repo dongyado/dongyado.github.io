@@ -4,7 +4,6 @@ title: 一个简单有效的判别性区域定位方法(Learning Deep Features f
 date: 2016-11-04T14:32:17+00:00
 author: nicklhy
 layout: post
-guid: http://closure11.com/?p=895
 permalink: '/%e4%b8%80%e4%b8%aa%e9%9d%9e%e5%b8%b8%e7%ae%80%e5%8d%95%e7%9b%b4%e6%8e%a5%e7%9a%84%e5%88%a4%e5%88%ab%e6%80%a7%e5%8c%ba%e5%9f%9f%e5%ae%9a%e4%bd%8d%e6%96%b9%e6%b3%95learning-deep-features-for-discrimina/'
 views:
   - "343"

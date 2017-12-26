@@ -4,7 +4,6 @@ title: 'Social and Economic Networks: Models and Analysis笔记三：Random Netw
 date: 2014-10-21T21:44:20+00:00
 author: nicklhy
 layout: post
-guid: http://closure11.com/?p=390
 permalink: '/social-and-economic-networks-models-and-analysis%e7%ac%94%e8%ae%b0%e4%b8%89%ef%bc%9arandom-networks/'
 views:
   - "75"

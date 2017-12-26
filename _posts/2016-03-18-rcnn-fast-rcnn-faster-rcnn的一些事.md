@@ -4,7 +4,6 @@ title: RCNN, Fast-RCNN, Faster-RCNN的一些事
 date: 2016-03-18T16:13:02+00:00
 author: nicklhy
 layout: post
-guid: http://closure11.com/?p=705
 permalink: '/rcnn-fast-rcnn-faster-rcnn%e7%9a%84%e4%b8%80%e4%ba%9b%e4%ba%8b/'
 views:
   - "18964"

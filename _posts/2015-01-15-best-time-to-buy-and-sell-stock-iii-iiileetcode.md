@@ -4,7 +4,6 @@ title: Best Time to Buy and Sell Stock I,II, III(LeetCode)
 date: 2015-01-15T17:48:08+00:00
 author: nicklhy
 layout: post
-guid: http://closure11.com/?p=574
 permalink: /best-time-to-buy-and-sell-stock-iii-iiileetcode/
 views:
   - "183"

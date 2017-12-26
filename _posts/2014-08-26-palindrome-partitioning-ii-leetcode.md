@@ -4,7 +4,6 @@ title: Palindrome Partitioning II (LeetCode)
 date: 2014-08-26T16:18:49+00:00
 author: nicklhy
 layout: post
-guid: http://closure11.com/?p=212
 permalink: /palindrome-partitioning-ii-leetcode/
 views:
   - "230"

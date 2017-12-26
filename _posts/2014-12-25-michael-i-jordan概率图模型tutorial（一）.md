@@ -4,7 +4,6 @@ title: Michael I. Jordan概率图模型tutorial（一）
 date: 2014-12-25T10:49:26+00:00
 author: nicklhy
 layout: post
-guid: http://closure11.com/?p=526
 permalink: '/michael-i-jordan%e6%a6%82%e7%8e%87%e5%9b%be%e6%a8%a1%e5%9e%8btutorial%ef%bc%88%e4%b8%80%ef%bc%89/'
 views:
   - "908"

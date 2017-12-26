@@ -4,7 +4,6 @@ title: 'Social and Economic Networks: Models and Analysis笔记六：Learning on
 date: 2014-12-01T10:19:13+00:00
 author: nicklhy
 layout: post
-guid: http://closure11.com/?p=406
 permalink: '/social-and-economic-networks-models-and-analysis%e7%ac%94%e8%ae%b0%e5%85%ad%ef%bc%9alearning-on-networks/'
 views:
   - "79"
@@ -30,7 +29,7 @@ categories:
     假设相反的情况，一部分结点一直选择A，其余结点选择B；
   </li>
   <li>
-    根据大数定律，后一部分结点将会最终得到一个非常非常接近真实值的p，而这个值一定大于<span style="line-height: 20.7999992370605px;"> $$\frac{1}{2}$$ ，否则他们应该已经改变选择了；</span>
+    根据大数定律，后一部分结点将会最终得到一个非常非常接近真实值的p，而这个值一定大于0.5 ，否则他们应该已经改变选择了；
   </li>
   <li>
     另一方面，所有与那些一直选择B的结点相连的结点最终也会选择B，因为他们看到其他结点一直选择B，就会知道这些结点计算出的p应该是比较接近真实值的；
@@ -52,7 +51,6 @@ categories:
 
 接下来又是对 $$b_i(t)$$ 收敛的分析，不过很有趣，之前我们讨论 $$T^t$$ 是否收敛时是根据<span style="color: rgb(85, 85, 85); font-family: 'Open Sans', sans-serif; font-size: 14px; line-height: 21px; background-color: rgb(246, 246, 246);">Perron-Frobenius定律，如果 $$T>0$$ 并且T是Primitive的，则无论 $$b_i(0)$$ 等于多少，最终都会收敛，不过这回slides中介绍了一个奇特（怪）的方法：</span> 
 
-<p style="text-align: center;">
   <strong>T is aperiodic if the greatest common divisor&nbsp;of its cycle lengths is one</strong>
 
 

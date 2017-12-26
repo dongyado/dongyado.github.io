@@ -4,7 +4,6 @@ title: 'Social and Economic Networks: Models and Analysis笔记一：基本概�
 date: 2014-10-12T16:07:38+00:00
 author: nicklhy
 layout: post
-guid: http://closure11.com/?p=327
 permalink: '/social-and-economic-networks-models-and-analysis%e7%ac%94%e8%ae%b0%e4%b8%80/'
 views:
   - "115"

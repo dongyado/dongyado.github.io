@@ -4,7 +4,6 @@ title: 'Social and Economic Networks: Models and Analysis笔记二：Background,
 date: 2014-10-16T15:34:53+00:00
 author: nicklhy
 layout: post
-guid: http://closure11.com/?p=356
 permalink: '/social-and-economic-networks-models-and-analysis%e7%ac%94%e8%ae%b0%e4%ba%8c%ef%bc%9abackground-definitions-and-measures-continued/'
 views:
   - "753"

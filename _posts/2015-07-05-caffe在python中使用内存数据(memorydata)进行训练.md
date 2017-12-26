@@ -4,7 +4,6 @@ title: Caffe在Python中使用内存数据(MemoryData)进行训练
 date: 2015-07-05T13:49:03+00:00
 author: nicklhy
 layout: post
-guid: http://closure11.com/?p=672
 permalink: '/caffe%e5%9c%a8python%e4%b8%ad%e4%bd%bf%e7%94%a8%e5%86%85%e5%ad%98%e6%95%b0%e6%8d%aememorydata%e8%bf%9b%e8%a1%8c%e8%ae%ad%e7%bb%83/'
 views:
   - "3311"

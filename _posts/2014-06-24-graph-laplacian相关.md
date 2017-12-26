@@ -4,7 +4,6 @@ title: Graph Laplacian相关
 date: 2014-06-24T17:01:26+00:00
 author: nicklhy
 layout: post
-guid: http://nicklhy.tk/?p=114
 permalink: '/graph-laplacian%e7%9b%b8%e5%85%b3/'
 views:
   - "127"

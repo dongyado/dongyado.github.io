@@ -4,7 +4,6 @@ title: 'Social and Economic Networks: Models and Analysis笔记七：Games on Ne
 date: 2014-12-15T20:51:43+00:00
 author: nicklhy
 layout: post
-guid: http://closure11.com/?p=408
 permalink: '/social-and-economic-networks-models-and-analysis%e7%ac%94%e8%ae%b0%e4%b8%83%ef%bc%9agames-on-networks/'
 views:
   - "74"

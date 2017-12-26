@@ -4,7 +4,6 @@ title: Real Analysis笔记，chapter 1（Measure Theory）
 date: 2014-06-17T10:56:26+00:00
 author: nicklhy
 layout: post
-guid: http://nicklhy.tk/?p=34
 permalink: /real-analysis-chapter-1/
 views:
   - "76"

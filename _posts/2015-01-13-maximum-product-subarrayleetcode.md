@@ -4,7 +4,6 @@ title: Maximum Product Subarray(LeetCode)
 date: 2015-01-13T22:54:29+00:00
 author: nicklhy
 layout: post
-guid: http://closure11.com/?p=569
 permalink: /maximum-product-subarrayleetcode/
 views:
   - "95"

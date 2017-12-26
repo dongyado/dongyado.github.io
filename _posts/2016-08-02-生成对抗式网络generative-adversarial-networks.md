@@ -4,7 +4,6 @@ title: 生成对抗式网络(Generative Adversarial Networks)
 date: 2016-08-02T15:01:32+00:00
 author: nicklhy
 layout: post
-guid: http://closure11.com/?p=818
 permalink: '/%e7%94%9f%e6%88%90%e5%af%b9%e6%8a%97%e5%bc%8f%e7%bd%91%e7%bb%9cgenerative-adversarial-networks/'
 views:
   - "5955"

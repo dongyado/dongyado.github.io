@@ -4,7 +4,6 @@ title: Random walk, something related to pagerank!
 date: 2014-09-04T21:55:29+00:00
 author: nicklhy
 layout: post
-guid: http://closure11.com/?p=264
 permalink: /random-walk-something-related-to-pagerank/
 views:
   - "1310"
