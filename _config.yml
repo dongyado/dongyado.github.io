@@ -30,5 +30,7 @@ categories_path: categories/
 tags_path: tags/
 
 
-gems:
+plugins:
   - jekyll-sitemap
+
+encoding: utf-8
