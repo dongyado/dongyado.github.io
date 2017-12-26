@@ -64,7 +64,7 @@ categories:
 
 虽然作者也不能明明白白的说出每一点的理由，不过考虑到这些也是经过无数个夜晚试出来的人生经验，还是暂且相信了吧。 
 
-下图是论文<sup>[2]</sup>中生成器的网络结构图，[<img alt="Screen Shot 2016-08-02 at 2.58.32 PM" class="aligncenter size-large wp-image-835" height="396" src="http://closure11.com/wp-content/uploads/2016/08/Screen-Shot-2016-08-02-at-2.58.32-PM-1024x414.png" width="980" srcset="http://closure11.com/wp-content/uploads/2016/08/Screen-Shot-2016-08-02-at-2.58.32-PM-1024x414.png 1024w, http://closure11.com/wp-content/uploads/2016/08/Screen-Shot-2016-08-02-at-2.58.32-PM-300x121.png 300w, http://closure11.com/wp-content/uploads/2016/08/Screen-Shot-2016-08-02-at-2.58.32-PM-768x311.png 768w, http://closure11.com/wp-content/uploads/2016/08/Screen-Shot-2016-08-02-at-2.58.32-PM-690x279.png 690w, http://closure11.com/wp-content/uploads/2016/08/Screen-Shot-2016-08-02-at-2.58.32-PM-980x396.png 980w" sizes="(max-width: 980px) 100vw, 980px" />](http://closure11.com/wp-content/uploads/2016/08/Screen-Shot-2016-08-02-at-2.58.32-PM.png) 
+下图是论文<sup>[2]</sup>中生成器的网络结构图，[<img alt="Screen Shot 2016-08-02 at 2.58.32 PM" class="aligncenter size-large wp-image-835" height="396" src="/images/post/2016/08/Screen-Shot-2016-08-02-at-2.58.32-PM-1024x414.png" width="980" srcset="/images/post/2016/08/Screen-Shot-2016-08-02-at-2.58.32-PM-1024x414.png 1024w, /images/post/2016/08/Screen-Shot-2016-08-02-at-2.58.32-PM-300x121.png 300w, /images/post/2016/08/Screen-Shot-2016-08-02-at-2.58.32-PM-768x311.png 768w, /images/post/2016/08/Screen-Shot-2016-08-02-at-2.58.32-PM-690x279.png 690w, /images/post/2016/08/Screen-Shot-2016-08-02-at-2.58.32-PM-980x396.png 980w" sizes="(max-width: 980px) 100vw, 980px" />](/images/post/2016/08/Screen-Shot-2016-08-02-at-2.58.32-PM.png) 
 
 基本可以认为就是一个正常的CNN分类网络反过来的结构，例如假设输入的rand是batch=100, channel=200, height=1, width=1的随机数，那么经过一个kernel=(4, 4), num_filter=512的fractional-strided convolution后，就变成了(100, 512, 4, 4)的矩阵，然后越往后长、宽越大，通道数越小，最后变成一个3\*64\*64的fake image。 
 
@@ -128,7 +128,7 @@ categories:
 
 因为 $$\log(1-D(G(z)))$$ 在早期的时候由于D判断的非常准，因此预测出的 $$D(G(z))$$ 基本都是0，而 $$\log(1-x)$$ 函数如下图所示，在x接近0的地方梯度也非常小，使得模型每次更新收敛速度非常慢，因此与其最小化这个不如直接最大化 $$\log D(G(z))$$ ，新的优化函数不管x接近0还是1，都能保持比较大的梯度，并且这样变换后，相当于两次都是使用正常的梯度上升，中间梯度不需要变换符号，只需要改变label从0到1，使得被保留的梯度只包含Loss函数求和项的第一部分，一举两得。 
 
-<a href="http://closure11.com/wp-content/uploads/2016/08/figure_1.png" rel="" style="" target="" title=""><img alt="y=log(1-x)" class="aligncenter size-full wp-image-846" height="420" src="http://closure11.com/wp-content/uploads/2016/08/figure_1.png" style="" title="" width="560" srcset="http://closure11.com/wp-content/uploads/2016/08/figure_1.png 800w, http://closure11.com/wp-content/uploads/2016/08/figure_1-300x225.png 300w, http://closure11.com/wp-content/uploads/2016/08/figure_1-768x576.png 768w, http://closure11.com/wp-content/uploads/2016/08/figure_1-690x518.png 690w" sizes="(max-width: 560px) 100vw, 560px" /></a> 
+<a href="/images/post/2016/08/figure_1.png" rel="" style="" target="" title=""><img alt="y=log(1-x)" class="aligncenter size-full wp-image-846" height="420" src="/images/post/2016/08/figure_1.png" style="" title="" width="560" srcset="/images/post/2016/08/figure_1.png 800w, /images/post/2016/08/figure_1-300x225.png 300w, /images/post/2016/08/figure_1-768x576.png 768w, /images/post/2016/08/figure_1-690x518.png 690w" sizes="(max-width: 560px) 100vw, 560px" /></a> 
 
 &nbsp; 
 

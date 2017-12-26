@@ -29,14 +29,14 @@ categories:
 
 那么当且仅当一个结点周围有超过t比例的邻居选择了1，那么他也会选择1，否则选择0，类似于下图： 
 
-[<img alt="1" class="aligncenter size-medium wp-image-494" height="154" src="http://closure11.com/wp-content/uploads/2014/12/1-300x154.png" width="300" srcset="http://closure11.com/wp-content/uploads/2014/12/1-300x154.png 300w, http://closure11.com/wp-content/uploads/2014/12/1.png 467w" sizes="(max-width: 300px) 100vw, 300px" />](http://closure11.com/wp-content/uploads/2014/12/1.png)或者另一种极端情况： 
+[<img alt="1" class="aligncenter size-medium wp-image-494" height="154" src="/images/post/2014/12/1-300x154.png" width="300" srcset="/images/post/2014/12/1-300x154.png 300w, /images/post/2014/12/1.png 467w" sizes="(max-width: 300px) 100vw, 300px" />](/images/post/2014/12/1.png)或者另一种极端情况： 
 
   * Payoff action 0: $$u_{d_i}(0, m_{N_i})=1$$ if $$m_{N_i}> 0$$ , $$= 0$$ if $$m_{N_i}$$ 
   * Payoff action 1: $$u_{d_i} (1, m_{N_i} ) = 1-c$$ 
 
 此时任意一个结点<span style="line-height: 20.7999992370605px;">只有在周围没有邻居选择1的情况下才会选择1（就是这么高冷，逼格高。。。）：</span> 
 
-[<img alt="1" class="aligncenter size-medium wp-image-499" height="150" src="http://closure11.com/wp-content/uploads/2014/12/11-300x150.png" width="300" srcset="http://closure11.com/wp-content/uploads/2014/12/11-300x150.png 300w, http://closure11.com/wp-content/uploads/2014/12/11.png 454w" sizes="(max-width: 300px) 100vw, 300px" />](http://closure11.com/wp-content/uploads/2014/12/11.png) 
+[<img alt="1" class="aligncenter size-medium wp-image-499" height="150" src="/images/post/2014/12/11-300x150.png" width="300" srcset="/images/post/2014/12/11-300x150.png 300w, /images/post/2014/12/11.png 454w" sizes="(max-width: 300px) 100vw, 300px" />](/images/post/2014/12/11.png) 
 
 ## 2.Complements/Substitutes
   
@@ -59,7 +59,7 @@ categories:
 
 **Nash equilibrium**: Every player&rsquo;s action is optimal&nbsp;for that player given the actions of others. 
 
-[<img alt="2" class="aligncenter size-medium wp-image-506" height="111" src="http://closure11.com/wp-content/uploads/2014/12/2-300x111.png" width="300" srcset="http://closure11.com/wp-content/uploads/2014/12/2-300x111.png 300w, http://closure11.com/wp-content/uploads/2014/12/2-1024x380.png 1024w, http://closure11.com/wp-content/uploads/2014/12/2-690x256.png 690w, http://closure11.com/wp-content/uploads/2014/12/2-980x364.png 980w, http://closure11.com/wp-content/uploads/2014/12/2.png 1194w" sizes="(max-width: 300px) 100vw, 300px" />](http://closure11.com/wp-content/uploads/2014/12/2.png)上图前两种情况都属于Nash equilibrium，第三者因为左上那个结点为选择1，所以中间结点没有做出最优选择。 
+[<img alt="2" class="aligncenter size-medium wp-image-506" height="111" src="/images/post/2014/12/2-300x111.png" width="300" srcset="/images/post/2014/12/2-300x111.png 300w, /images/post/2014/12/2-1024x380.png 1024w, /images/post/2014/12/2-690x256.png 690w, /images/post/2014/12/2-980x364.png 980w, /images/post/2014/12/2.png 1194w" sizes="(max-width: 300px) 100vw, 300px" />](/images/post/2014/12/2.png)上图前两种情况都属于Nash equilibrium，第三者因为左上那个结点为选择1，所以中间结点没有做出最优选择。 
 
 另外，一个网络可能存在多种<span style="line-height: 20.7999992370605px;">equilibrium方案。</span> 
 

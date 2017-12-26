@@ -62,7 +62,7 @@ Social and Economic Networks: Models and Analysis这门课是斯坦福大学在C
   ......
 
 
-[<img alt="1" class="aligncenter size-medium wp-image-346" height="241" src="http://closure11.com/wp-content/uploads/2014/10/1-300x241.jpg" width="300" srcset="http://closure11.com/wp-content/uploads/2014/10/1-300x241.jpg 300w, http://closure11.com/wp-content/uploads/2014/10/1-280x225.jpg 280w, http://closure11.com/wp-content/uploads/2014/10/1.jpg 527w" sizes="(max-width: 300px) 100vw, 300px" />](http://closure11.com/wp-content/uploads/2014/10/1.jpg)这种树在经过l步之后，将包含 $$1+d+d(d-1)+\cdots +d(d-1)^{l-1}=1+\frac{d((d-1)^l-1)}{(d-2)}\approx (d-1)^l$$ 个节点。 
+[<img alt="1" class="aligncenter size-medium wp-image-346" height="241" src="/images/post/2014/10/1-300x241.jpg" width="300" srcset="/images/post/2014/10/1-300x241.jpg 300w, /images/post/2014/10/1-280x225.jpg 280w, /images/post/2014/10/1.jpg 527w" sizes="(max-width: 300px) 100vw, 300px" />](/images/post/2014/10/1.jpg)这种树在经过l步之后，将包含 $$1+d+d(d-1)+\cdots +d(d-1)^{l-1}=1+\frac{d((d-1)^l-1)}{(d-2)}\approx (d-1)^l$$ 个节点。 
 
 6.Chernoff Bounds 
 

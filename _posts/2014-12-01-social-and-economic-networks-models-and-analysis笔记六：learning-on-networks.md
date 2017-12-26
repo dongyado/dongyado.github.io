@@ -58,6 +58,6 @@ categories:
 
 这里所说的cycle lengths实际上是根据传播矩阵T画出的概率传播图中所有环的长度，如果这些cycle lengths最大公约数为1，则T是aperiodic的，意味着 $$T^t$$ 是收敛的 
 
-[<img alt="aperiodic" class="aligncenter size-medium wp-image-482" height="126" src="http://closure11.com/wp-content/uploads/2014/12/aperiodic-300x126.png" width="300" srcset="http://closure11.com/wp-content/uploads/2014/12/aperiodic-300x126.png 300w, http://closure11.com/wp-content/uploads/2014/12/aperiodic-690x291.png 690w, http://closure11.com/wp-content/uploads/2014/12/aperiodic.png 735w" sizes="(max-width: 300px) 100vw, 300px" />](http://closure11.com/wp-content/uploads/2014/12/aperiodic.png)至今也不太明白这个aperiodic和Perron定律是个什么联系，o(╯□╰)o 
+[<img alt="aperiodic" class="aligncenter size-medium wp-image-482" height="126" src="/images/post/2014/12/aperiodic-300x126.png" width="300" srcset="/images/post/2014/12/aperiodic-300x126.png 300w, /images/post/2014/12/aperiodic-690x291.png 690w, /images/post/2014/12/aperiodic.png 735w" sizes="(max-width: 300px) 100vw, 300px" />](/images/post/2014/12/aperiodic.png)至今也不太明白这个aperiodic和Perron定律是个什么联系，o(╯□╰)o 
 
 另外，由于这个Markov过程最终稳态其实就是T的特征值为1对应的特征向量，因此每个结点的influence就正好对应了其eigenvector centrality

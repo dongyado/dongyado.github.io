@@ -38,7 +38,7 @@ categories:
 
 如果在q>p时我们把 $$F(t)$$ 的曲线画出来可以发现它的形状是一个&ldquo;S&rdquo;，即 $$F(t)$$ 初始从0开始不断增长，一开始的时候变化缓慢，中间变化迅速，最后又变化缓慢，斜率逐渐归为0。例如当t->0时， $$F(t)\rightarrow 0$$ ， $$dF(t)/dt\rightarrow p$$ ；当 $$F(t)\rightarrow 1$$ 时， $$dF(t)/dt\rightarrow 0$$ 。前提条件q>p是为了满足在t很小时 $$F(t)$$ 的convexity。 
 
-[<img alt="1" class="aligncenter size-medium wp-image-453" height="183" src="http://closure11.com/wp-content/uploads/2014/11/1-300x183.png" width="300" srcset="http://closure11.com/wp-content/uploads/2014/11/1-300x183.png 300w, http://closure11.com/wp-content/uploads/2014/11/1-690x422.png 690w, http://closure11.com/wp-content/uploads/2014/11/1.png 920w" sizes="(max-width: 300px) 100vw, 300px" />](http://closure11.com/wp-content/uploads/2014/11/1.png) 
+[<img alt="1" class="aligncenter size-medium wp-image-453" height="183" src="/images/post/2014/11/1-300x183.png" width="300" srcset="/images/post/2014/11/1-300x183.png 300w, /images/post/2014/11/1-690x422.png 690w, /images/post/2014/11/1.png 920w" sizes="(max-width: 300px) 100vw, 300px" />](/images/post/2014/11/1.png) 
 
 ## 2.Bring in interaction structure
   

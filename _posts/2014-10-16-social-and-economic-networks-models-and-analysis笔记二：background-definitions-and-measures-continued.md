@@ -63,7 +63,7 @@ categories:
 
 **&nbsp;**&nbsp; &nbsp; &nbsp; &nbsp;**(e)Eigenvector Measures**: "Not what you know, but who you know." 
 
-[<img alt="1" class="aligncenter size-medium wp-image-376" height="97" src="http://closure11.com/wp-content/uploads/2014/10/11-300x97.png" width="300" srcset="http://closure11.com/wp-content/uploads/2014/10/11-300x97.png 300w, http://closure11.com/wp-content/uploads/2014/10/11.png 625w" sizes="(max-width: 300px) 100vw, 300px" />](http://closure11.com/wp-content/uploads/2014/10/11.png)&nbsp; &nbsp; &nbsp; &nbsp; 上图中两个黄色节点的度数都是2，但是显而易见，中间的节点要比右边节点的中心集中度高很多，如果使用前面说的Closeness Centrality、Decay Centrality和Betweenness Centrality则可以区分出这两者的差别，Closeness Centrality和Decay是从该节点到其他所有节点的距离来度量，而Betweenness Centrality则是从该节点的通过性重要程度来度量，那么有没有可能从其他角度进行分析呢？Eigenvector Measures就是一个区别于前面集中方法的方式，原理上很直接，如果一个人认识了一些大人物，那么他很可能也是一个大人物～～ 
+[<img alt="1" class="aligncenter size-medium wp-image-376" height="97" src="/images/post/2014/10/11-300x97.png" width="300" srcset="/images/post/2014/10/11-300x97.png 300w, /images/post/2014/10/11.png 625w" sizes="(max-width: 300px) 100vw, 300px" />](/images/post/2014/10/11.png)&nbsp; &nbsp; &nbsp; &nbsp; 上图中两个黄色节点的度数都是2，但是显而易见，中间的节点要比右边节点的中心集中度高很多，如果使用前面说的Closeness Centrality、Decay Centrality和Betweenness Centrality则可以区分出这两者的差别，Closeness Centrality和Decay是从该节点到其他所有节点的距离来度量，而Betweenness Centrality则是从该节点的通过性重要程度来度量，那么有没有可能从其他角度进行分析呢？Eigenvector Measures就是一个区别于前面集中方法的方式，原理上很直接，如果一个人认识了一些大人物，那么他很可能也是一个大人物～～ 
 
 
   $$C_i = a\sum_jg_{ij}C_j$$

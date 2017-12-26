@@ -25,7 +25,7 @@ $$C=\{\pi_1u_1+\cdots\pi_Ku_K|\sum_{k=1}^{K}\pi_k=1\textit{ and }\pi_k\ge 0 \tex
 
 下图是一个典型的三维simplex： 
 
-<a href="http://closure11.com/wp-content/uploads/2017/06/Tetrahedron.png" rel="" style="" target="" title=""><img alt="" class="aligncenter size-full wp-image-1044" height="240" src="http://closure11.com/wp-content/uploads/2017/06/Tetrahedron.png" style="" title="" width="240" srcset="http://closure11.com/wp-content/uploads/2017/06/Tetrahedron.png 1000w, http://closure11.com/wp-content/uploads/2017/06/Tetrahedron-150x150.png 150w, http://closure11.com/wp-content/uploads/2017/06/Tetrahedron-300x300.png 300w, http://closure11.com/wp-content/uploads/2017/06/Tetrahedron-768x768.png 768w, http://closure11.com/wp-content/uploads/2017/06/Tetrahedron-690x690.png 690w, http://closure11.com/wp-content/uploads/2017/06/Tetrahedron-980x980.png 980w" sizes="(max-width: 240px) 100vw, 240px" /></a> 
+<a href="/images/post/2017/06/Tetrahedron.png" rel="" style="" target="" title=""><img alt="" class="aligncenter size-full wp-image-1044" height="240" src="/images/post/2017/06/Tetrahedron.png" style="" title="" width="240" srcset="/images/post/2017/06/Tetrahedron.png 1000w, /images/post/2017/06/Tetrahedron-150x150.png 150w, /images/post/2017/06/Tetrahedron-300x300.png 300w, /images/post/2017/06/Tetrahedron-768x768.png 768w, /images/post/2017/06/Tetrahedron-690x690.png 690w, /images/post/2017/06/Tetrahedron-980x980.png 980w" sizes="(max-width: 240px) 100vw, 240px" /></a> 
 
 现在回到Dirichlet Distribution，它的概率密度公式是 
 

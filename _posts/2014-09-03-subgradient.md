@@ -41,7 +41,7 @@ OK，终于可以开始正题了，经典梯度下降算法实际上是利用负
 
 那么对于次梯度，我们可以采用同样简单的迭代方式来求解最小值点吗？非常幸运，答案是可以，不过原因却并非梯度下降法的理论依据这么简单，<span style="line-height: 1.6em;">因为次梯度不一定指向最小值点的方向（通常不指向。。。如下图），但是，这个方向可以让你离最小值点更近</span><img alt="enlightened" height="20" src="http://closure11.com/wp-content/plugins/ckeditor-for-wordpress/ckeditor/plugins/smiley/images/lightbulb.gif" title="enlightened" width="20" /><span style="line-height: 1.6em;">！</span> 
 
-[<img alt="捕获" class="aligncenter size-medium wp-image-261" height="151" src="http://closure11.com/wp-content/uploads/2014/09/捕获-300x151.png" width="300" srcset="http://closure11.com/wp-content/uploads/2014/09/捕获-300x151.png 300w, http://closure11.com/wp-content/uploads/2014/09/捕获.png 480w" sizes="(max-width: 300px) 100vw, 300px" />](http://closure11.com/wp-content/uploads/2014/09/捕获.png) 
+[<img alt="捕获" class="aligncenter size-medium wp-image-261" height="151" src="/images/post/2014/09/捕获-300x151.png" width="300" srcset="/images/post/2014/09/捕获-300x151.png 300w, /images/post/2014/09/捕获.png 480w" sizes="(max-width: 300px) 100vw, 300px" />](/images/post/2014/09/捕获.png) 
 
 <span style="line-height: 1.6em;">证明如下：</span> 
 
