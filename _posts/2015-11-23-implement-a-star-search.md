@@ -33,7 +33,7 @@ A*（A-Star)算法是一种静态路网中求解最短路径最有效的直接�
 ### A*算法原理
 本文使用了那套最经典的图（来自[A* Pathfinding for Beginners](http://homepages.abdn.ac.uk/f.guerin/pages/teaching/CS1013/practicals/aStarTutorial.htm)，感谢原作者的制作)
 
-![image](http://pic002.cnblogs.com/images/2011/70278/2011052614224354.jpg)
+![image](/images/post/a-star-pathfinding/2011052614224354.jpg)
 
 游戏中的地图，都可以看成一个方块集合。上图A表示起点，B表示终点，蓝色方块表示障碍物，我们需要找出一条路，从A点开始，绕过蓝色方块，到达B点。
 
@@ -49,7 +49,7 @@ A*（A-Star)算法是一种静态路网中求解最短路径最有效的直接�
     2. 找出从A点开始移动一步能到达的方块并加入到开放列表，就是环绕A点的方块，如果是障碍物就不加入开放列表
     3. 把A点从开放列表删除，并加入关闭列表，因为A点已经被检查过了 
 
-![image](http://pic002.cnblogs.com/images/2011/70278/2011052522372596.jpg) 
+![image](/images/post/a-star-pathfinding/2011052522372596.jpg) 
 
 上图绿色边框的方块表示已经加入开发列表，等待下一次检查；中间淡蓝色边框则表示已经被加入关闭列表，不需要再次检查。
 
@@ -69,7 +69,7 @@ A*（A-Star)算法是一种静态路网中求解最短路径最有效的直接�
 
 很容易知道，P（3,4）和P（5,3）的曼哈顿距离为H=|5-3| + |3-4| = 3
 
-![image](http://homepages.abdn.ac.uk/f.guerin/pages/teaching/CS1013/practicals/aStarTutorial_files/aStarT3.jpg)
+![image](/images/post/a-star-pathfinding/2011052614494187.jpg)
 
 如上图，每个方块的左上角表示F值，左下角表示G值，右下角表示H值。
 
@@ -82,7 +82,7 @@ G值和H值都确定了，相加即可得到F值。
 好，所有的东西都准备好了，现在可以确定了下一步走到那个方块了。
 
 
-![image](http://pic002.cnblogs.com/images/2011/70278/2011052614123932.jpg)
+![image](/images/post/a-star-pathfinding/2011052614123932.jpg)
 
 之前的三步中，我们已经把起点周围的方块加入到开启列表中了，现在找出开启列表中F值最小的方块，也就是绿色方块右侧的那块，标记为C（F值为40），然后对C进行以下处理：
     
