@@ -55,13 +55,13 @@ https://sourceforge.net/projects/synergy-stable-builds/files/?source=navbar
 ### 设置图
 服务端
 
-![server](/images/post/synerge-server.jpg)
+![server](/images/post/synergy-server.jpg)
 
 第一次设置，需要设置好 IP，并且设置好电脑的显示器布局，synergy 会根据设置好的位置来进行鼠标的切换。
 
 客户端
 
-![client](/images/post/synerge-client.jpg)
+![client](/images/post/synergy-client.jpg)
 
 
 ### 已知 bug
