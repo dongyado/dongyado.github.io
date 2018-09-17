@@ -69,11 +69,11 @@ https://sourceforge.net/projects/synergy-stable-builds/files/?source=navbar
 1.9.0 以下的版本，在 mac 10.12 及以上的版本，在连接wifi工作时，会有严重的卡顿，
 这个问题跟 mac 操作系统在 wifi 状态的管理有很大关系， synergy 在 1.9.0 修复了这个问题。
 
-### mac 系统，打开应用无限崩溃问题
+### mac 系统，打开应用软件无限崩溃问题
 
-今天重启了一下系统，然后 synergy 打开就直接崩溃了，一打开就崩。
+今天重启了一下系统，然后 synergy 打开就直接崩溃了，重装后打开还是崩。
 
-看了下 log ：
+初步看了下 log ：
 
 ```text
 Exception Type:        EXC_BAD_ACCESS (SIGSEGV)
@@ -89,17 +89,17 @@ Terminating Process:   exc handler [0]
 遇到这种问题一般有几个原因：
 
 + 配置文件保存失败或者格式有误，应用在启动的时候没有做好容错处理
-+ 系统版本与应用版本不兼容
 + 应用退出保存的运行数据有问题，应用在重新打开时会去读取已经存在的运行数据导致崩溃
++ 系统版本与应用版本不兼容(系统版本和应用版本都未改变，排除该原因)
 
 查了一下大家解决的办法基本就是卸载重装，但是大概率并不能解决问题。
 因为卸载的时候不一定能保证该应用的配置文件和运行数据被移除感觉，特别是在 mac 系统，
 从 applications 中卸载应用也就是把应用相关的文件移除了，配置文件和运行数据压根就不会动。  
 
-所以不管你卸载重装多次，如果是由配置文件和运行数据导致的崩溃，自然无法解决。
+所以不管你卸载重装多次，如果是由配置文件和运行数据导致的崩溃，都无法解决。
 
+所以最关键的是找到该应用启动的时候打开了哪些文件，我总结了以下三种方法：
 
-有两种办法:
 
 + 查看 mac 系统中该应用的配置文件和运行数据的路径，配置文件一般会在用户目录下，而数据文件会在
     用户目录下的 Library/Saved Application State/　里面
@@ -111,15 +111,10 @@ Terminating Process:   exc handler [0]
         ```text
         ...
         /Users/dongya/Library/Saved Application State/synergy.savedState/data.data
-        4
         /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HIToolbox.framework/Versions/A/Resources/Extras2.rsrc
-        5
         /System/Library/Frameworks/CoreImage.framework/Versions/A/Resources/ci_kernels.metallib
-        6
         /private/var/folders/q4/hbvrj59n1ps_h9q30hcfpq_00000gn/C/synergy/com.apple.metal/libraries.maps
-        7
         /private/var/folders/q4/hbvrj59n1ps_h9q30hcfpq_00000gn/C/synergy/com.apple.metal/libraries.data
-
         ...
         ```
         
