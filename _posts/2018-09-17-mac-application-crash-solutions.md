@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Mac 系统，应用突然无限崩溃的一般原因和解决方法
-date: 2019-09-17
+date: 2018-09-17
 categories:
 - funny
 tags: [mac]
@@ -19,7 +19,7 @@ author:
 
 今天无意重启了一下系统，再打开 Synergy 就直接崩溃，重装后打开还是崩。
 
-初步看了下 log：
+查看日志有以下信息：
 
 ```text
 Exception Type:        EXC_BAD_ACCESS (SIGSEGV)
