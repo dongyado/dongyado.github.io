@@ -27,31 +27,32 @@ author:
 
 
 ```c
-	// 初始化转换上下文对象，输入颜色模式为 yuv420p, 输出格式为 rgba, 宽高不变
-	mColorConversionContext = sws_getCachedContext(	mColorConversionContext,
-	                                                   mMeta.mWidth, mMeta.mHeight, AV_PIX_FMT_YUV420P,
-	                                                   mMeta.mWidth, mMeta.mHeight, AV_PIX_FMT_RGBA,
-													   SWS_FAST_BILINEAR, nullptr, nullptr, nullptr);
-	
-	// 初始化目标数据相关对象
-	mConvertedFrame = av_frame_alloc();
-	int bufferSize = av_image_get_buffer_size(AV_PIX_FMT_RGBA, mMeta.mWidth, mMeta.mHeight, 1);
-	mConvertedBuffer = (uint8_t *)av_malloc(bufferSize * sizeof(uint8_t));
-	av_image_fill_arrays(mConvertedFrame->data,
-	                     mConvertedFrame->linesize,
-	                     mConvertedBuffer,
-	                     AV_PIX_FMT_RGBA,
-	                     mMeta.mWidth,
-	                     mMeta.mHeight, 1);
-	// ...
-	// 从 yuv420p 转换到 rgba
-    sws_scale(mColorConversionContext,
-              (const uint8_t *const *)mDecodeFrameContext->mFrame->data,
-              mDecodeFrameContext->mFrame->linesize,
-              0,
-              mMeta.mHeight,
-              mConvertedFrame->data,
-              mConvertedFrame->linesize);
+// 初始化转换上下文对象，输入颜色模式为 yuv420p, 输出格式为 rgba, 宽高不变
+mColorConversionContext = sws_getCachedContext(	
+    mColorConversionContext,
+    mMeta.mWidth, mMeta.mHeight, AV_PIX_FMT_YUV420P,
+    mMeta.mWidth, mMeta.mHeight, AV_PIX_FMT_RGBA,
+    SWS_FAST_BILINEAR, nullptr, nullptr, nullptr);
+
+// 初始化目标数据相关对象
+mConvertedFrame = av_frame_alloc();
+int bufferSize = av_image_get_buffer_size(AV_PIX_FMT_RGBA, mMeta.mWidth, mMeta.mHeight, 1);
+mConvertedBuffer = (uint8_t *)av_malloc(bufferSize * sizeof(uint8_t));
+av_image_fill_arrays(mConvertedFrame->data,
+                    mConvertedFrame->linesize,
+                    mConvertedBuffer,
+                    AV_PIX_FMT_RGBA,
+                    mMeta.mWidth,
+                    mMeta.mHeight, 1);
+// ...
+// 从 yuv420p 转换到 rgba
+sws_scale(mColorConversionContext,
+            (const uint8_t *const *)mDecodeFrameContext->mFrame->data,
+            mDecodeFrameContext->mFrame->linesize,
+            0,
+            mMeta.mHeight,
+            mConvertedFrame->data,
+            mConvertedFrame->linesize);
 
 
 ```
