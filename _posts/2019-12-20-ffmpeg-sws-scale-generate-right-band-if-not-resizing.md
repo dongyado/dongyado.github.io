@@ -25,8 +25,8 @@ author:
 
 + 转换代码如下：
 
-```c
 
+```c
 	// 初始化转换上下文对象，输入颜色模式为 yuv420p, 输出格式为 rgba, 宽高不变
 	mColorConversionContext = sws_getCachedContext(	mColorConversionContext,
 	                                                   mMeta.mWidth, mMeta.mHeight, AV_PIX_FMT_YUV420P,
@@ -67,8 +67,8 @@ author:
 
 
 + 修复后的代码如下：
-```c
 
+```c
 	int swsFlags = SWS_FAST_BILINEAR;
 
 	// 当视频宽高不为8的倍数，同时转换又没有尺寸变化时，会导致右侧出现一条花屏
