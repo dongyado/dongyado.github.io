@@ -69,22 +69,23 @@ author:
 + 修复后的代码如下：
 
 ```c
-	int swsFlags = SWS_FAST_BILINEAR;
+int swsFlags = SWS_FAST_BILINEAR;
 
-	// 当视频宽高不为8的倍数，同时转换又没有尺寸变化时，会导致右侧出现一条花屏
-	// 这个问题从 2012年被发现，到2019年的 4.1.3 版本还继续存在
-	// 通过增加 SWS_ACCURATE_RND 可以规避这个问题
-	if ((mMeta.mWidth & 0x7) || (mMeta.mHeight & 0x7)) {
-		swsFlags |= SWS_ACCURATE_RND;
-	}
+// 当视频宽高不为8的倍数，同时转换又没有尺寸变化时，会导致右侧出现一条花屏
+// 这个问题从 2012年被发现，到2019年的 4.1.3 版本还继续存在
+// 通过增加 SWS_ACCURATE_RND 可以规避这个问题
+if ((mMeta.mWidth & 0x7) || (mMeta.mHeight & 0x7)) {
+    swsFlags |= SWS_ACCURATE_RND;
+}
 
-	// 初始化转换上下文对象
-	mColorConversionContext = sws_getCachedContext(	mColorConversionContext,
-	                                                   mMeta.mWidth, mMeta.mHeight, AV_PIX_FMT_YUV420P,
-	                                                   mMeta.mWidth, mMeta.mHeight, AV_PIX_FMT_RGBA,
-													   swsFlags, nullptr, nullptr, nullptr);
-	
-	// ...
+// 初始化转换上下文对象
+mColorConversionContext = sws_getCachedContext(	
+    mColorConversionContext,
+    mMeta.mWidth, mMeta.mHeight, AV_PIX_FMT_YUV420P,
+    mMeta.mWidth, mMeta.mHeight, AV_PIX_FMT_RGBA,
+    swsFlags, nullptr, nullptr, nullptr);
+
+// ...
 
 ```
 
