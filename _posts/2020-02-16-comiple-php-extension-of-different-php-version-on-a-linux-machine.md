@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 在一台linux上编译不同 php 版本的扩展
+title: 在一台linux机器上编译多个 php 版本的扩展
 date: 2020-02-16
 categories:
 - Ffmpeg
