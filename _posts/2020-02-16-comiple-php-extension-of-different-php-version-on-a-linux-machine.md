@@ -51,6 +51,7 @@ php-config 被　configure 用来确定包含 php 版本和一些库
 ubuntu 系统下可以使用　update-alternatives 替换, 其他 linux 发行版如果没有类似的工具，则使用软链接替换。
 
 +　设置 php 版本
+
 ```text
 update-alternatives --list php
 /usr/bin/php7.0
@@ -64,6 +65,7 @@ update-alternatives --set php /usr/bin/php7.0
 ```
 
 + 设置 phpize 版本
+
 ```text
 # 查看可用的 phpize
 update-alternatives --list phpize
@@ -78,6 +80,7 @@ update-alternatives --set phpize /usr/bin/phpize7.0
 ```
 
 + 设置 php-config 版本
+
 ```text
 # 查看可用的 php-config
 update-alternatives --list php-config
