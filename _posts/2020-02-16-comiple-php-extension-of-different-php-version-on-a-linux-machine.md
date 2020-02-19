@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 在一台linux机器上编译多个 php 版本的扩展
+title: 在同一台linux机器编译多个 php 版本的扩展
 date: 2020-02-16
 categories:
 - Ffmpeg
@@ -45,10 +45,10 @@ author:
 
 需要保持　php, phpize, php-config 为目标版本。
 
-phpize 用来初始化扩展，确定扩展使用的 php api 版本, 并且生成配置文件比如　configure
-php-config 被　configure 用来确定包含 php 版本和一些库
+phpize 用来初始化扩展，确定扩展使用的 php api 版本, 并且生成配置文件比如　configure 脚本  
+php-config 被　configure 用来确定包含 php 的头文件和一些库
 
-ubuntu 系统下可以使用　update-alternatives 替换, 其他 linux 发行版如果没有类似的工具，则使用软链接替换。
+ubuntu 系统下可以使用　update-alternatives 替换, 其他 linux 发行版如果没有类似的工具，可以使用软链接替换。
 
 +　设置 php 版本
 
@@ -94,4 +94,4 @@ update-alternatives --set php-config /usr/bin/php-config7.0
 # ln -s /usr/bin/php-config7.0 /usr/bin/php-config
 ```
 
-设置完以上步骤后，就可以按文章开头的步骤编译安装 php7.0 的扩展了。
+设置完以上步骤后，就可以按文章开头的步骤编译安装 php7.0或其他 php 版本的扩展了。
