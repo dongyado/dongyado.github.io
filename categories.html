@@ -30,7 +30,8 @@ group: navigation
 </div>
 <!-- Tab panes -->
 <div class="tab-content list-container">
-  {% for category in site.categories %}
+  {% sorted_cats = site.categories | sort %}
+  {% for category in sorted_cats %}
     <div class="tab-pane" id="{{ category[0] | replace:' ','-' }}-ref">
       <h2 style="margin-top: 0px">{{ category[0] | capitalize }}</h2>
       <ul class="list-unstyled">
