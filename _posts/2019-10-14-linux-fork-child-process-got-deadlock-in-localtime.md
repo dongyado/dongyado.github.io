@@ -1,6 +1,6 @@
 ---
 layout: post
-title: linux localtime/localtime_r 导致 fork 子进程死锁卡死问题的研究
+title: Linux localtime/localtime_r 导致 fork 子进程死锁卡死问题的研究
 date: 2019-10-14
 categories:
 - linux

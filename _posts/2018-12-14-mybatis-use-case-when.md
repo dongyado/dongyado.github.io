@@ -1,6 +1,6 @@
 ---
 layout: post
-title: mybatis 使用 case when 报错问题
+title: Mybatis 使用 case when 报错问题
 date: 2018-12-14
 categories:
 - devlog

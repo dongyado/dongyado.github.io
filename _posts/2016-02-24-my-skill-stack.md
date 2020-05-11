@@ -1,6 +1,6 @@
 ---
 layout: post
-title: skill stacks
+title: Skill stacks
 date: 2016-02-24
 categories:
 - notes

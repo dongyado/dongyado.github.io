@@ -1,6 +1,6 @@
 ---
 layout: post
-title: javascript设置CSS样式的方法
+title: Javascript设置CSS样式的方法
 date: 2013-09-10 16:50:04.000000000 +08:00
 categories:
 - front end

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: ip2region 数据库文件结构及原理
+title: Ip2region 数据库文件结构及原理
 date: 2016-08-18
 categories:
 - tool
