@@ -3,7 +3,7 @@ layout: post
 title: 这是一个积累的开始
 date: 2014-08-01 12:33:18.000000000 +08:00
 categories:
-- 随笔
+- notes
 tags: []
 status: publish
 type: post

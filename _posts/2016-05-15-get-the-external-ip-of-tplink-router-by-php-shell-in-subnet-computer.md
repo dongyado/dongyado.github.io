@@ -3,7 +3,6 @@ layout: post
 title: 内网机器通过脚本获取tplink路由器的外网IP
 date: 2016-05-15
 categories:
-- remote-control-door
 - tool
 tags: [router]
 status: publish

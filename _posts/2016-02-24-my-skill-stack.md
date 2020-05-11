@@ -3,7 +3,7 @@ layout: post
 title: skill stacks
 date: 2016-02-24
 categories:
-- 随笔
+- notes
 tags: []
 status: publish
 type: post

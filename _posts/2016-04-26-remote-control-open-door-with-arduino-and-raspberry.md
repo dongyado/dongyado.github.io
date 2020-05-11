@@ -3,7 +3,6 @@ layout: post
 title: 使用 arduino + 树莓派 实现远程控制开门 — 介绍
 date: 2016-04-26
 categories:
-- remote-control-door
 - tool
 tags: [树莓派,arduino]
 status: publish

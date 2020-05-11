@@ -3,7 +3,7 @@ layout: post
 title: 使用ionic开发自己的app 
 date: 2015-05-24 13:50:04.000000000 +08:00
 categories:
-- 前端
+- front end
 tags: [ionic]
 status: publish
 type: post
