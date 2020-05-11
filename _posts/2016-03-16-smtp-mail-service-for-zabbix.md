@@ -4,7 +4,6 @@ title: zabbix使用外部smtp服务器发送告警邮件
 date: 2016-03-15
 categories:
 - linux
-- zabbix
 tags: [zabbix,heirloom-mailx]
 status: publish
 type: post

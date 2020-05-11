@@ -4,7 +4,6 @@ title: 使用cron和scp备份数据(ubuntu)
 date: 2015-07-13 23:33:18.000000000 +08:00
 categories:
 - linux
-- tool 
 tags: [cron, scp]
 status: publish
 type: post

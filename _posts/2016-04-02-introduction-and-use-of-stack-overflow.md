@@ -4,8 +4,7 @@ title: 栈溢出的原理和利用
 date: 2016-03-31
 categories:
 - linux
-- funny
-tags: [栈溢出，stack overflow]
+tags: [stack overflow]
 status: publish
 type: post
 published: true

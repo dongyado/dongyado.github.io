@@ -3,8 +3,7 @@ layout: post
 title: 令人惊喜的jekyll
 date: 2015-05-10 21:33:18.000000000 +08:00
 categories:
-- jekyll
-- funny
+- 随笔
 tags: [jekyll]
 status: publish 
 type: post

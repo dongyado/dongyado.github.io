@@ -4,7 +4,7 @@ title: 几款好用的 vim 插件和使用 vundle 安装 vim 插件
 date: 2017-07-26
 categories:
 - tool
-tags: [linux, vim, plugin]
+tags: [linux, vim]
 status: publish
 type: post
 published: true

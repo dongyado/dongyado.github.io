@@ -5,8 +5,7 @@ date: 2016-05-15
 categories:
 - remote-control-door
 - tool
-- funny
-tags: [路由器，tplink]
+tags: [router]
 status: publish
 type: post
 published: true

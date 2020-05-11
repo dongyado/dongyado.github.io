@@ -3,8 +3,8 @@ layout: post
 title: We can never say goodbye to Kobe  
 date: 2016-04-15
 categories:
-- 日志
-tags: [Kobe]
+- 随笔
+tags: []
 status: publish
 type: post
 published: true

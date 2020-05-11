@@ -4,7 +4,7 @@ title: ip2region 数据库文件结构及原理
 date: 2016-08-18
 categories:
 - tool
-tags: [ip定位, ip查询, ip2region]
+tags: [ip定位, ip2region]
 status: publish
 type: post
 published: true

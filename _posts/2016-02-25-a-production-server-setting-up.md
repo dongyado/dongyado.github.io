@@ -4,6 +4,7 @@ title: 记一次生产服务器基本配置过程
 date: 2016-02-25 
 categories:
 - linux
+- devlog
 tags: [linux]
 status: publish
 type: post

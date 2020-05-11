@@ -3,7 +3,8 @@ layout: post
 title: 在同一台linux机器编译多个 php 版本的扩展
 date: 2020-02-16
 categories:
-- Ffmpeg
+- php
+- linux
 tags: [php, php_extension]
 status: publish
 type: post

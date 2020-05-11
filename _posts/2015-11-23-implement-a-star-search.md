@@ -4,7 +4,7 @@ title: A*寻路的原理和实现
 date: 2015-11-23 09:18.000000000 +08:00
 categories:
 - algorithm
-tags: [a*, search algorithm]
+tags: [a*]
 status: publish
 type: post
 published: true

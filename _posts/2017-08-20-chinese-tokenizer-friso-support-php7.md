@@ -4,7 +4,7 @@ title: 中文分词器 friso，以及开始支持 php7 扩展
 date: 2017-08-20
 categories:
 - tool
-tags: [中文分词器, friso, php7]
+tags: [中文分词器, friso, php]
 status: publish
 type: post
 published: true

@@ -3,7 +3,7 @@ layout: post
 title: 搭建jekyll运行环境
 date: 2015-12-25
 categories:
-- jekyll
+- devlog
 tags: [jekyll]
 status: publish
 type: post

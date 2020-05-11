@@ -3,6 +3,7 @@ layout: post
 title: Synergy —— 一套键盘鼠标控制多台电脑(支持linux, win, mac)
 date: 2018-07-19
 categories:
+- linux
 - tool
 tags: [Synergy]
 status: publish

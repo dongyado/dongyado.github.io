@@ -4,8 +4,7 @@ title: 内网机器获取路由器外网IP的方法
 date: 2016-04-17
 categories:
 - tool
-- funny
-tags: [路由器ip]
+tags: [router]
 status: publish
 type: post
 published: true

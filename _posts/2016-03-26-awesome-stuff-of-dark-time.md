@@ -3,7 +3,7 @@ layout: post
 title: 《暗时间》—— 思考不需要安静的坐下来 
 date: 2016-03-26 
 categories:
-- 读书 
+- 随笔 
 tags: [暗时间]
 status: publish
 type: post

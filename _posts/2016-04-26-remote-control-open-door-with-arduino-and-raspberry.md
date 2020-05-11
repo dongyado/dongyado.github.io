@@ -5,8 +5,7 @@ date: 2016-04-26
 categories:
 - remote-control-door
 - tool
-- funny
-tags: [树莓派, 远程控制, arduino]
+tags: [树莓派,arduino]
 status: publish
 type: post
 published: true

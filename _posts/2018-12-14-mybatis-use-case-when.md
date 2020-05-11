@@ -3,7 +3,7 @@ layout: post
 title: mybatis 使用 case when 报错问题
 date: 2018-12-14
 categories:
-- 开发日志
+- devlog
 tags: [mybatis]
 status: publish
 type: post

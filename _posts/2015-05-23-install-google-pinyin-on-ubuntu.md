@@ -5,7 +5,7 @@ date: 2015-05-23 22:50:04.000000000 +08:00
 categories:
 - linux
 - tool
-tags: [ubuntu, pinyin]
+tags: [ubuntu]
 status: publish
 type: post
 published: true

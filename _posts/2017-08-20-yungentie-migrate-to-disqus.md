@@ -4,7 +4,7 @@ title: 将网易云跟帖评论导入 disqus
 date: 2017-08-20
 categories:
 - tool
-tags: [转换器, 云跟帖，disqus]
+tags: [云跟帖，disqus]
 status: publish
 type: post
 published: true

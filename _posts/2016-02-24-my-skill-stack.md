@@ -1,10 +1,10 @@
 ---
 layout: post
-title: 我的技术栈
+title: skill stacks
 date: 2016-02-24
 categories:
-- funny
-tags: [skill stack]
+- 随笔
+tags: []
 status: publish
 type: post
 published: true

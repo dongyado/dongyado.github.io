@@ -3,8 +3,8 @@ layout: post
 title: Mac 系统，应用突然无限崩溃的一般原因和解决方法
 date: 2018-09-17
 categories:
-- funny
-tags: [mac]
+- 随笔
+tags: [mac, synergy]
 status: publish
 type: post
 published: true

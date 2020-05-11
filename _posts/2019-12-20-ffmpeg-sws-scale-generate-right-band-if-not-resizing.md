@@ -3,7 +3,7 @@ layout: post
 title: ffmpeg sws_scale 颜色转换，右侧花屏问题研究及解决方案
 date: 2019-12-20
 categories:
-- Ffmpeg
+- ffmpeg
 tags: [ffmpeg, sws_scale]
 status: publish
 type: post
