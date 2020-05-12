@@ -7,7 +7,7 @@ group: navigation
 
 <div class="list-container">
     <ul class="nav nav-tabs-horizontal">
-      {% assign categories_list = site.categories %}
+      {% assign categories_list = site.categories | sort %}
       {% if categories_list.first[0] == null %}
         {% for category in categories_list %}
             <li>
