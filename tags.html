@@ -12,7 +12,7 @@ group: navigation
         {% for tag in tags_list %}
             <li>
                 <a href="{{ site.BASE_PATH }}/{{ site.tags_path }}#{{ tag[0] }}-ref" data-toggle="tab">
-                  {{ tag | capitalize }} <span class="badge pull-right">({{ site.tags[tag].size }})</span>
+                  {{ tag }} <span class="badge pull-right">({{ site.tags[tag].size }})</span>
                </a>
             </li>
         {% endfor %}
@@ -20,7 +20,7 @@ group: navigation
         {% for tag in tags_list %}
             <li>
                 <a href="{{ site.BASE_PATH }}/{{ site.tags_path }}#{{ tag[0] }}-ref" data-toggle="tab">
-                    {{ tag[0] | capitalize }} <span class="badge pull-right">({{ tag[1].size }})</span>
+                    {{ tag[0] }} <span class="badge pull-right">({{ tag[1].size }})</span>
                 </a>
             </li>
         {% endfor %}
@@ -30,9 +30,10 @@ group: navigation
 </div>
 <!-- Tab panes -->
 <div class="tab-content list-container">
-  {% for tag in site.tags %}
+  {% assign sorted_tags = site.tags | sort %}
+  {% for tag in sorted_tags %}
     <div class="tab-pane" id="{{ tag[0] | replace:' ','-' }}-ref">
-      <h2 style="margin-top: 0px">{{ tag[0] | capitalize }}</h2>
+      <h2 style="margin-top: 0px">{{ tag[0] }}</h2>
       <ul class="list-unstyled">
         {% assign pages_list = tag[1] %}
         {% for node in pages_list %}

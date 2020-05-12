@@ -12,7 +12,7 @@ group: navigation
         {% for category in categories_list %}
             <li>
                 <a href="{{ site.BASE_PATH }}/{{ site.categories_path }}#{{ category | replace:' ','-' }}-ref" data-toggle="tab">
-                  {{ category | capitalize }} <span class="badge pull-right">({{ site.categories[category].size }})</span>
+                  {{ category }} <span class="badge pull-right">({{ site.categories[category].size }})</span>
                </a>
             </li>
         {% endfor %}
@@ -20,7 +20,7 @@ group: navigation
         {% for category in categories_list %}
             <li>
                 <a href="{{ site.BASE_PATH }}/{{ site.categories_path }}#{{ category[0] | replace:' ','-' }}-ref" data-toggle="tab">
-                    {{ category[0] | capitalize }} <span class="badge pull-right">({{ category[1].size }})</span>
+                    {{ category[0] }} <span class="badge pull-right">({{ category[1].size }})</span>
                 </a>
             </li>
         {% endfor %}
