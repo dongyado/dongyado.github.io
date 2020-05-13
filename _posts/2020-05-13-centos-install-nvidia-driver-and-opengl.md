@@ -1,7 +1,7 @@
 ---
 layout: post
 title: CentOS 安装 nvidia 驱动, OpenGL
-date: 2020-05-12
+date: 2020-05-13
 categories:
 - linux
 - video/audio tech

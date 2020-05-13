@@ -4,17 +4,8 @@ title: MacOS 编译最新版 ffmpeg (4.2.1) 动态库
 date: 2020-05-11
 categories:
 - ffmpeg
+- video/audio tech
 tags: [macos,ffmpeg]
-status: publish
-type: post
-published: true
-meta:
-  _edit_last: '1'
-  views: '2'
-author:
-  login: slayer
-  email: dongyado@gmail.com
-  display_name: slayer
 ---
 
 在 macOS 下编译相对于 linux 要简单一些。由于在 macOS 下一般是开发使用，所以在编译之前使用 homebrew 安装相关依赖即可。

@@ -4,17 +4,8 @@ title: CentOS 编译最新版 ffmpeg (4.2.1) 动态库
 date: 2020-05-11
 categories:
 - ffmpeg
+- video/audio tech
 tags: [linux, centos, ffmpeg]
-status: publish
-type: post
-published: true
-meta:
-  _edit_last: '1'
-  views: '2'
-author:
-  login: slayer
-  email: dongyado@gmail.com
-  display_name: slayer
 ---
 
 准备工作
