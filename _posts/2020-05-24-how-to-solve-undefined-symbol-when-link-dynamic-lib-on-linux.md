@@ -11,33 +11,33 @@ tags: [linux]
 
 ### 可能的原因
 
-1. 依赖库未找到  
+#### 1. 依赖库未找到  
   这是最常见的原因，一般是没有指定查找目录，或者没有安装到系统查找目录里
 
-2. 链接的依赖库不一致  
+#### 2. 链接的依赖库不一致  
   编译的时候使用了高版本，然后不同机器使用时链接的却是低版本，低版本可能缺失某些 api 
 
-3. 符号被隐藏  
+#### 3. 符号被隐藏  
   如果动态库编译时被默认隐藏，外部代码使用了某个被隐藏的符号。
 
-4. c++ abi 版本不一致  
+#### 4. c++ abi 版本不一致  
   最典型的例子就是 gcc 4.x 到 gcc 5.x 版本之间的问题，在  4.x 编辑的动态库，不能在 5.x 中链接使用。
 
 ### 解决方法
 
-1. 依赖库未找到
+#### 1. 依赖库未找到
   - 使用 ldd -r <lib-file-name>, 确定系统库中是否存在所依赖的库
   - 执行  ldconfig 命令更新 ld 缓存
   - 执行 ldconfig -p | grep {SO_NAME} 查看是否能找到对应的库
   - 检查 LD_LIBRATY_PATH 是否设置了有效的路径
 
-2. 链接的库版本不一致
+#### 2. 链接的库版本不一致
 
   如果系统中之前有安装过相同的库，或者存在多个库，就需要确定链接的具体是哪个库
 
   有一个特殊场景需要注意下，.so 文件中有个默认 rpath 路径，用于搜索被依赖的库，这个路径优先于系统目录和LD_LIBRARY_PATH。假如 rpath 存在相同名字的 .so 文件，会优先加载这个路径的文件。
 
-在遇到 undefined symbol 问题时，使用 readelf -d | grep rpath 查看:
+在遇到 undefined symbol 问题时，使用 `readelf -d <lib-file> | grep - i rpath` 查看:
 
 ```
 $ readelf -d libSXVideoEngineJni.so | grep rpath
@@ -81,7 +81,7 @@ $ readelf -d libSXVideoEngineJni.so | grep rpath
       -z nodeflib linker option, this step is skipped.
 ```
 
-3. 符号被隐藏
+#### 3. 符号被隐藏
 
 第三方已经编译好的库，在引入了对应的头文件，使用了其中的某个方法，最终链接的时候出现 undefined symbol，这种情况有可能是库的开发者并没有导出这个方法的符号。
 
@@ -100,7 +100,7 @@ SXVideoEngine::Public::License::SetLicense(char const*)
 
 ```
 
-4. c++ Abi 版本不一致   
+#### 4. c++ Abi 版本不一致   
 
 Gcc 对 c++ 的新特性是一步一步的增加的，如果实现了新的特性，就可能会修改 c++ 的 abi，并且会升级 glibc 的版本。
 
@@ -117,7 +117,8 @@ undefined symbol:  "std::__cxx11 ***"
 
 
 ### 实用命令总结
-1. ldd 命令，用于查找某个动态库所依赖的库是否存在
+
+#### ldd 命令，用于查找某个动态库所依赖的库是否存在
 
 ```
 # ldd -r <lib/excutable file> 
@@ -137,7 +138,7 @@ $ ldd -r libSXVideoEngine.so
         ...
 ```
 
-2. nm 命令，用于读取库被导出的符号
+#### nm 命令，用于读取库被导出的符号
 
 ```
 $ nm -gDC libSXVideoEngineJni.so | grep -i license
@@ -149,14 +150,14 @@ $ nm -gDC libSXVideoEngineJni.so | grep -i license
 ```
 
 
-3. readelf 用于读取 elf 文件的相关信息
+#### readelf 用于读取 elf 文件的相关信息
 
 ```
 $ readelf -d libSXVideoEngineJni.so | grep rpath
 0x000000000000000f (RPATH)              Library rpath: [/home/slayer/workspace/SXVideoEngine-Core/Render/cmake-build-debug:/home/slayer/workspace/SXVideoEngine-Core/Render/../../SXVideoEngine-Core-Lib/blend2d/linux/lib]
 ```
 
-4. c++filt 用于获取符号的原始名
+#### c++filt 用于获取符号的原始名
 
 ```
 $ c++filt __ZN13SXVideoEngine6Public7License10SetLicenseEPKc
