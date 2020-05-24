@@ -1,165 +1,58 @@
 ---
 layout: post
-title: Linux 动态库 undefined symbol 原因定位与解决方法
+title: 如何高效的调试 ffmpeg 
 date: 2020-05-24
 categories:
-- linux
-tags: [linux]
+- ffmpeg
+tags: [ffmpeg]
 ---
+### 为什么需要调试 ffmpeg 
 
-在使用动态库开发部署时，遇到最多的问题可能就是 undefined symbol 了，导致这个出现这个问题的原因有多种多样，快速找到原因，采用对应的方法解决是本文写作的目的。
+Ffmpeg 作为音频编解码封装最流行的基础工具，也是一个庞大的程序，大部分使用是使用命令行去处理。但是也有更高级的应用，比如在手机端，服务端开发基于 ffmpeg 开放的 api 的应用程序。
 
-### 可能的原因
+在移动端，特别是安卓端，只要有音视频的处理，基本是离不开 ffmpeg 开放的 api 。在服务端进行视频渲染解码，封装转码也需要ffmpeg。
 
-#### 1. 依赖库未找到  
-  这是最常见的原因，一般是没有指定查找目录，或者没有安装到系统查找目录里
+但是在熟悉精通整个 ffmpeg 的大部分接口和音视频相关基础之前，几乎所有人都会遇到 ffmpeg 接口返回的错误码，比如 -1, -22。一般的处理情况都是去看 ffmpeg 提供的 examples, 或者再次搜索一下其他人有没有遇到同样的问题。
 
-#### 2. 链接的依赖库不一致  
-  编译的时候使用了高版本，然后不同机器使用时链接的却是低版本，低版本可能缺失某些 api 
+但是 ffmpeg 返回的错误码是公用的，比如 -22 表示 invalid argument, 但是到底是哪一个参数没设置正确， ffmpeg 根本没有任何提示。对于这种问题，供刚入门 ffmpeg 的童鞋的解决方法，要么用排除法，一个一个的方式去试，幸运的时候能试出来，但是试不出来是常态，可能会在这样一个问题上浪费几个小时，甚至几天的时间。
 
-#### 3. 符号被隐藏  
-  如果动态库编译时被默认隐藏，外部代码使用了某个被隐藏的符号。
+所以需要找到更高效的方法。
 
-#### 4. c++ abi 版本不一致  
-  最典型的例子就是 gcc 4.x 到 gcc 5.x 版本之间的问题，在  4.x 编辑的动态库，不能在 5.x 中链接使用。
+### 如何高效调试
 
-### 解决方法
-
-#### 1. 依赖库未找到
-  - 使用 ldd -r <lib-file-name>, 确定系统库中是否存在所依赖的库
-  - 执行  ldconfig 命令更新 ld 缓存
-  - 执行 ldconfig -p | grep {SO_NAME} 查看是否能找到对应的库
-  - 检查 LD_LIBRATY_PATH 是否设置了有效的路径
-
-#### 2. 链接的库版本不一致
-
-  如果系统中之前有安装过相同的库，或者存在多个库，就需要确定链接的具体是哪个库
-
-  有一个特殊场景需要注意下，.so 文件中有个默认 rpath 路径，用于搜索被依赖的库，这个路径优先于系统目录和LD_LIBRARY_PATH。假如 rpath 存在相同名字的 .so 文件，会优先加载这个路径的文件。
-
-在遇到 undefined symbol 问题时，使用 `readelf -d <lib-file> | grep - i rpath` 查看:
+#### 1. 让  ffmpeg  打印 debug 级别的日志
 
 ```
-$ readelf -d libSXVideoEngineJni.so | grep rpath
- 0x000000000000000f (RPATH)              Library rpath: [/home/slayer/workspace/SXVideoEngine-Core/Render/cmake-build-debug:/home/slayer/workspace/SXVideoEngine-Core/Render/../../SXVideoEngine-Core-Lib/blend2d/linux/lib]
+# 在调用 ffmpeg 相关函数前 设置 ffmpeg 打印的日志级别为 debug
+av_log_set_level(AV_LOG_DEBUG);
 ```
 
-如果存在的路径中有相应的库，可以先重命名文件再测试确认。
+在运行程序时， ffmpeg 会打印所有调试信息，这时候就是要找到可能的反应原因的错误信息，但是我们也有很大可能还是找不到具体原因。
 
-关于连接时的顺序可以查看文档： http://man7.org/linux/man-pages/man8/ld.so.8.html
+#### 2. 编译带完整debug 信息的 ffmpeg 
+在使用 ffmpeg 接口出现了问题时，如果能通过 gdb 断点进去 ffmepg 相关的文件去调试，这对有助于快速定位问题。
 
-```
-   If a shared object dependency does not contain a slash, then it is
-   searched for in the following order:
-
-   o  Using the directories specified in the DT_RPATH dynamic section
-      attribute of the binary if present and DT_RUNPATH attribute does
-      not exist.  Use of DT_RPATH is deprecated.
-
-   o  Using the environment variable LD_LIBRARY_PATH, unless the
-      executable is being run in secure-execution mode (see below), in
-      which case this variable is ignored.
-
-   o  Using the directories specified in the DT_RUNPATH dynamic section
-      attribute of the binary if present.  Such directories are searched
-      only to find those objects required by DT_NEEDED (direct
-      dependencies) entries and do not apply to those objects' children,
-      which must themselves have their own DT_RUNPATH entries.  This is
-      unlike DT_RPATH, which is applied to searches for all children in
-      the dependency tree.
-
-   o  From the cache file /etc/ld.so.cache, which contains a compiled
-      list of candidate shared objects previously found in the augmented
-      library path.  If, however, the binary was linked with the -z
-      nodeflib linker option, shared objects in the default paths are
-      skipped.  Shared objects installed in hardware capability
-      directories (see below) are preferred to other shared objects.
-
-   o  In the default path /lib, and then /usr/lib.  (On some 64-bit
-      architectures, the default paths for 64-bit shared objects are
-      /lib64, and then /usr/lib64.)  If the binary was linked with the
-      -z nodeflib linker option, this step is skipped.
-```
-
-#### 3. 符号被隐藏
-
-第三方已经编译好的库，在引入了对应的头文件，使用了其中的某个方法，最终链接的时候出现 undefined symbol，这种情况有可能是库的开发者并没有导出这个方法的符号。
+但是需要我们手动编译带 debug 信息，并且去掉编译优化的 ffmpeg 库：
 
 ```
-# 使用 nm 命令查看导出的函数符号， 这里查看 License 相关的函数
-$ nm -gDC libSXVideoEngineJni.so | grep -i license
-0000000000008110 T __ZN13SXVideoEngine6Public7License10SetLicenseEPKc
-0000000000008130 T __ZN13SXVideoEngine6Public7License13LicenseStatusEv
-0000000000008190 T __ZN13SXVideoEngine6Public7License19IsVideoCutSupportedEv
-0000000000008170 T __ZN13SXVideoEngine6Public7License26IsDynamicTemplateSupportedEv
-0000000000008150 T __ZN13SXVideoEngine6Public7License26IsStadardTemplateSupportedEv
-
-# nm 返回的并不是原始函数名，通过 c++filt 获取原始名称
-$ c++filt __ZN13SXVideoEngine6Public7License10SetLicenseEPKc
-SXVideoEngine::Public::License::SetLicense(char const*)
-
+./configure \
+    --prefix="/usr/" \
+    --pkg-config-flags="--static" \
+    --extra-cflags="-I$HOME/ffmpeg_build/include" \
+    --extra-ldflags="-L$HOME/ffmpeg_build/lib" \
+    --extra-libs="-lpthread -lm" \
+    --bindir="/usr/bin" \
+    --enable-debug=3\
+    --disable-optimizations \
+    --disable-stripping \
+    --enable-shared \
+    --enable-pic \
+    --enable-gpl \
+    --enable-nonfree \
+    ...
 ```
+--disable-optimizations 用于去掉编译的优化，这样可以避免在 gdb 调试时，变量出现 `optimized out` 的提示
 
-#### 4. c++ Abi 版本不一致   
+--disable-stripping 禁止去掉 gdb 所需的符号信息
 
-Gcc 对 c++ 的新特性是一步一步的增加的，如果实现了新的特性，就可能会修改 c++ 的 abi，并且会升级 glibc 的版本。
-
-Abi 链接最常见的错误是 std::string 和 std::list 的在gcc 4.x 和 gcc 5.x 的不同实现引起的。在gcc 4.x 时，gcc 对标准 string 的实现就放在 std 命名空间下，编译时展开为 std::basic_string 。但是 gcc 5.x 开始，对 string 的实现就放在了 std::__cxx11空间里，编译后展开为 std::__cxx11::basic_string 。这就会导致在 gcc 4.x 编译的动态库，假如有的函数使用了 string 作为参数或者返回值，这时导出的函数参数为 std::basic_string 类型。 无法在 gcc 5.x 下编译连接使用。  
-错误类似：
-
-```
-undefined symbol:  "std::__cxx11 ***"
-```
-
-这种情况有一个折中办法就是在gcc 5.x 或以上 编译时，增加 `-D_GLIBCXX_USE_CXX11_ABI=0` 禁用 c++11 abi。
-
-当然最好的做法就是保证编译器大版本基本一致。在新开发的程序如果用到了 c++ 的新特性，升级 gcc 版本和 glibc 是十分必要的。
-
-
-### 实用命令总结
-
-#### ldd 命令，用于查找某个动态库所依赖的库是否存在
-
-```
-# ldd -r <lib/excutable file> 
-# 找不到的库会出现 not found
-$ ldd -r libSXVideoEngine.so
-        linux-vdso.so.1 =>  (0x00007ffc337d2000)
-        libz.so.1 => /lib64/libz.so.1 (0x00007f061cf41000)
-        libX11.so.6 => /lib64/libX11.so.6 (0x00007f061cc03000)
-        libEGL.so.1 => /lib64/libEGL.so.1 (0x00007f061c9ef000)
-        libGLESv2.so.2 => /lib64/libGLESv2.so.2 (0x00007f061c7dd000)
-        libpthread.so.0 => /lib64/libpthread.so.0 (0x00007f061c5c1000)
-        libblend2d.so => /home/seeshion/workspace/SXVideoEngine-Core/Render/../../SXVideoEngine-Core-Lib/blend2d/linux/lib/libblend2d.so (0x00007f061c187000)
-        libfreeimage.so.3 => /lib/libfreeimage.so.3 (0x00007f061b8ac000)
-        libavcodec.so.58 => /lib/libavcodec.so.58 (0x00007f06198b6000)
-        libavformat.so.58 => /lib/libavformat.so.58 (0x00007f06193e1000)
-        libavutil.so.56 => /lib/libavutil.so.56 (0x00007f06190bd000)
-        ...
-```
-
-#### nm 命令，用于读取库被导出的符号
-
-```
-$ nm -gDC libSXVideoEngineJni.so | grep -i license
-0000000000008110 T __ZN13SXVideoEngine6Public7License10SetLicenseEPKc
-0000000000008130 T __ZN13SXVideoEngine6Public7License13LicenseStatusEv
-0000000000008190 T __ZN13SXVideoEngine6Public7License19IsVideoCutSupportedEv
-0000000000008170 T __ZN13SXVideoEngine6Public7License26IsDynamicTemplateSupportedEv
-0000000000008150 T __ZN13SXVideoEngine6Public7License26IsStadardTemplateSupportedEv
-```
-
-
-#### readelf 用于读取 elf 文件的相关信息
-
-```
-$ readelf -d libSXVideoEngineJni.so | grep rpath
-0x000000000000000f (RPATH)              Library rpath: [/home/slayer/workspace/SXVideoEngine-Core/Render/cmake-build-debug:/home/slayer/workspace/SXVideoEngine-Core/Render/../../SXVideoEngine-Core-Lib/blend2d/linux/lib]
-```
-
-#### c++filt 用于获取符号的原始名
-
-```
-$ c++filt __ZN13SXVideoEngine6Public7License10SetLicenseEPKc
-SXVideoEngine::Public::License::SetLicense(char const*)
-```
+编译出来的库，就可以使用 gdb 跟踪具体在 ffmpeg 中的哪一步出错，能快速定位问题。
