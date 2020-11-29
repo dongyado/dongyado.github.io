@@ -27,7 +27,7 @@ wasm 增强了 js 的能力，js 不擅长做的事情，比如绘图，编码�
 WebAssembly 现在支持从 C/C++, go, rust 编译成 wasm 模块。使用 emscripten sdk, 可以从 C/C++ 源码直接编译成 wasm 文件，然后在网页中
 直接加载使用。
 
-参考 https://emscripten.org/docs/getting_started/Tutorial.html 入门。
+参考 https://emscripten.org/docs/getting_started/Tutorial.html 入门。  
 参考 https://emscripten.org/docs/compiling/Building-Projects.html 编译项目。
 
 但是如何从网页调用 wasm 的方法。两种方法：
