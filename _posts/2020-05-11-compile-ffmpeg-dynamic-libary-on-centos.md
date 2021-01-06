@@ -55,7 +55,7 @@ sudo yum install automake autoconf libtool build-essential pkg-config gcc-c++
    ``` 
    wget https://downloads.sourceforge.net/opencore-amr/fdk-aac-2.0.1.tar.gz
    tar xzvf fdk-aac-2.0.1.tar.gz 
-   cd fdk-aac-2.0.1 && autoreconf -fiv && ./configure --prefix="$HOME/ffmpeg_build" --disable-shared
+   cd fdk-aac-2.0.1 && autoreconf -fiv && ./configure --prefix="$HOME/ffmpeg_build" --enable-shared
    make &&  make install
    ```
 
