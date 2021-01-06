@@ -99,7 +99,7 @@ sudo yum install automake autoconf libtool build-essential pkg-config gcc-c++
 
     ```
     cd ~/ffmpeg_sources/x265/build/linux
-    PATH="$HOME/bin:$PATH" cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$HOME/ffmpeg_build" -DENABLE_SHARED:bool=off  ../../source
+    PATH="$HOME/bin:$PATH" cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$HOME/ffmpeg_build" -DENABLE_SHARED:bool=on  ../../source
     make && install
     ```
 
