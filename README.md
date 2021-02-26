@@ -1,6 +1,8 @@
 dongyado's blog
 =====
 
+visit with : http://dongyadoit.com
+
 ### 
 - notes of development
 - some thoughts.
