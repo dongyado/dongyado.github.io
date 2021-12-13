@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>内网机器通过脚本获取tplink路由器的外网IP</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/tool/2016/05/15/get-the-external-ip-of-tplink-router-by-php-shell-in-subnet-computer/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/tool/2016/05/15/get-the-external-ip-of-tplink-router-by-php-shell-in-subnet-computer/">内网机器通过脚本获取tplink路由器的外网IP</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		<p>一般来说，子网机器是无法直接拿到路由器的IP，
+就比如笔记本没法直接获取所连接路由器的IP，只能登录路由器控制台查看到分配给路由器的IP。</p>
+
+<p>之前有一篇博客总结了几种内网机器获取路由器外网IP的方法，查看<a href="/tool/funny/2016/04/17/several-ways-to-get-router-external-ip/">several-ways-to-get-router-external-ip</a>。</p>
+
+<p>这里实现第三种方法，使用脚本去获取。</p>
+
+<h3 id="准备工作">准备工作</h3>
+<p>要用脚本模拟登录控制面板，要先弄清楚，浏览器中控制面板是如何登录并获取数据的。</p>
+
+<p>本文使用的路由器： TPL-LINK TK-WR842N， 软件版本：2.3.8 Build 150425 Rel.60768n</p>
+
+<p>登录该路由器的控制面板后，用chrome的开发者工具调试，发现登录和获取数据操作的request header里面没有带任何cookies，
+那就只能是通过类似access_token的机制来验证访问权限了。</p>
+
+<p>通过断点调试发现，每隔1秒就有请求发出：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http:192.168.1.1/?code=2&amp;asyn=1&amp;id=R0TPpo5pDg%3CJr)5k
+</code></pre></div></div>
+
+<p>request header 里面还传了一个request payload, 数据为： 23， 后面发现这个必须带，可能是一个指令。</p>
+
+<p>请求成功（200），返回的数据类似：</p>
+
+<p>data1:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  00000 id 23 ip 219.133.xxx.xxx mask 255.255.255.255 gateway 219.133.xxx.xxx dns 0 202.96.128.86 dns 1 202.96.134.133 status 1 code 0 upTime 0 inPkts 2147576644 inOctets 2 outPkts 2149255756 outOctets 0
+</code></pre></div></div>
+
+<p>很明显，url后面带了一个id, 而且这个id每隔一段时间就会变，也就是说这个id会过期。</p>
+
+<p>继续调试后发现每隔一段时间，会有一个请求失败，返回401（Unauthorized）,返回的数据类似：</p>
+
+<p>data2:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>00007 00003 00001 }2C2H]7Peba4sBvw ^O09j|cvO)4Eu*$~6KWnOa,c[+$5PIDi3(Ca!ni+VsKgT(N$7ZiR(DIJVp(wt5Up]0vbJ$G2kVq&gt;46b.efn9(tTcx~Kg6swDW61qwt912h|]26cJ0(0+GgWvAh}!.]X[K.4+lDl~!UEd9PfR9vq1~ppk*komxr
+</code></pre></div></div>
+
+<p>那么很明显没用的数据完全没必要返回，认证失败返回这些信息，而且在下一次请求的时候id变了，也就是说完成了自动认证，那就说js里面肯定有个生成id的函数。</p>
+
+<p>既然已经确定js中肯定有加密函数，那完全可以从登录开始，一步一步调试，经过了几个小时的调试，终于把基本的函数和流程确定下来：</p>
+
+<h4 id="登录操作">登录操作：</h4>
+
+<p>点击登录按钮会直接调用这个函数：</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="kd">function</span> <span class="nx">lgDoSub</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">lgPwd</span> <span class="o">=</span> <span class="nx">id</span><span class="p">(</span><span class="dl">"</span><span class="s2">lgPwd</span><span class="dl">"</span><span class="p">),</span> <span class="nx">sessionValue</span> <span class="o">=</span> <span class="dl">""</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">value</span> <span class="o">=</span> <span class="nx">lgPwd</span><span class="p">.</span><span class="nx">value</span><span class="p">,</span> <span class="nx">result</span><span class="p">,</span> <span class="nx">pos</span><span class="p">,</span> <span class="nx">errorCode</span><span class="p">;</span>
+
+        <span class="cm">/* 检查密码 */</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">value</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;</span> <span class="mi">15</span> <span class="o">||</span> <span class="nx">value</span><span class="p">.</span><span class="nx">length</span> <span class="o">&lt;</span> <span class="mi">6</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="nx">showLgError</span><span class="p">(</span><span class="nx">HTTP_CLIENT_NORMAL</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">lgChkPswVal</span><span class="p">(</span><span class="nx">value</span><span class="p">))</span>
+        <span class="p">{</span>
+            <span class="nx">showLgError</span><span class="p">(</span><span class="nx">HTTP_CLIENT_PSWIlegal</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="cm">/* 发送密码数据 */</span>
+        <span class="nx">result</span> <span class="o">=</span> <span class="nx">$</span><span class="p">.</span><span class="nx">auth</span><span class="p">(</span><span class="nx">$</span><span class="p">.</span><span class="nx">orgAuthPwd</span><span class="p">(</span><span class="nx">value</span><span class="p">));</span> <span class="c1">// 这里调用auth函数进行认证</span>
+
+        <span class="cm">/* 处理返回的结果 */</span>
+        <span class="k">if</span><span class="p">(</span><span class="nx">result</span><span class="p">.</span><span class="nx">errorno</span> <span class="o">==</span> <span class="nx">ENONE</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="nx">unloadLogin</span><span class="p">();</span>
+            <span class="nx">lgPwd</span><span class="p">.</span><span class="nx">value</span> <span class="o">=</span> <span class="dl">""</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+            <span class="nx">showLgError</span><span class="p">(</span><span class="nb">parseInt</span><span class="p">(</span><span class="nx">authInfo</span><span class="p">[</span><span class="mi">1</span><span class="p">]));</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+</code></pre></div></div>
+
+<p>根据原始密码生成一个加密后的密码</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code>	<span class="k">this</span><span class="p">.</span><span class="nx">orgAuthPwd</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">pwd</span><span class="p">)</span>
+	<span class="p">{</span>
+		<span class="kd">var</span> <span class="nx">strDe</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">RDpbLfCPsJZ7fiv</span><span class="dl">"</span><span class="p">;</span>
+		<span class="kd">var</span> <span class="nx">dic</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">yLwVl0zKqws7LgKPRQ84Mdt708T1qQ3Ha7xv3H7NyU84p21BriUWBU43odz3iP4rBL3cD02KZciX</span><span class="dl">"</span><span class="o">+</span>
+				  <span class="dl">"</span><span class="s2">TysVXiV8ngg6vL48rPJyAUw0HurW20xqxv9aYb4M9wK1Ae0wlro510qXeU07kV57fQMc8L6aLgML</span><span class="dl">"</span><span class="o">+</span>
+				  <span class="dl">"</span><span class="s2">wygtc0F10a0Dg70TOoouyFhdysuRMO51yY5ZlOZZLEal1h0t9YQW0Ko7oBwmCAHoic4HYbUyVeU3</span><span class="dl">"</span><span class="o">+</span>
+				  <span class="dl">"</span><span class="s2">sfQ1xtXcPcf1aT303wAQhv66qzW</span><span class="dl">"</span><span class="p">;</span>
+
+		<span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">securityEncode</span><span class="p">(</span><span class="nx">pwd</span><span class="p">,</span> <span class="nx">strDe</span><span class="p">,</span> <span class="nx">dic</span><span class="p">);</span> <span class="c1">// pwd为登录时候输入的密码</span>
+	<span class="p">};</span>
+</code></pre></div></div>
+
+<p>认证时会调用这个函数，进行认证操作：</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cm">/* 认证请求 */</span>
+	<span class="k">this</span><span class="p">.</span><span class="nx">auth</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span>
+	<span class="p">{</span>
+		<span class="kd">var</span> <span class="nx">pwd</span> <span class="o">=</span> <span class="nx">data</span><span class="p">;</span>
+		<span class="kd">var</span> <span class="nx">url</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">domainUrl</span> <span class="o">+</span> <span class="dl">"</span><span class="s2">?code=</span><span class="dl">"</span><span class="o">+</span> <span class="nx">TDDP_AUTH</span> <span class="o">+</span><span class="dl">"</span><span class="s2">&amp;asyn=0</span><span class="dl">"</span><span class="p">;</span> <span class="c1">//这里生成请求路径</span>
+
+		<span class="cm">/* 密码格式错误 */</span>
+		<span class="k">if</span> <span class="p">(</span><span class="nx">data</span> <span class="o">==</span> <span class="kc">undefined</span> <span class="o">||</span> <span class="mi">0</span> <span class="o">==</span> <span class="nx">pwd</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span>
+		<span class="p">{</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">.</span><span class="nx">errorno</span> <span class="o">=</span> <span class="nx">EUNAUTH</span><span class="p">;</span>
+			<span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">;</span>
+		<span class="p">}</span>
+
+		<span class="nx">data</span> <span class="o">=</span> <span class="kc">undefined</span><span class="p">;</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">initResult</span><span class="p">();</span>
+    
+    <span class="cm">/**
+     * authInfo是个全局变量，每次返回401都会用下文提到的parseAuthRlt,重新解析获取数据。
+     * this.sessiion 对应请求url中的id
+     */</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">session</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">securityEncode</span><span class="p">(</span><span class="nx">authInfo</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">authInfo</span><span class="p">[</span><span class="mi">4</span><span class="p">]);</span> 
+    
+		<span class="nx">url</span> <span class="o">+=</span> <span class="p">(</span><span class="dl">"</span><span class="s2">&amp;id=</span><span class="dl">"</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">encodePara</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">session</span><span class="p">));</span>
+
+		<span class="k">if</span> <span class="p">((</span><span class="kc">false</span> <span class="o">==</span> <span class="k">this</span><span class="p">.</span><span class="nx">local</span><span class="p">)</span> <span class="o">||</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">routerAlive</span><span class="p">))</span>
+		<span class="p">{</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">externLoading</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">request</span><span class="p">(</span><span class="nx">url</span><span class="p">,</span> <span class="nx">data</span><span class="p">,</span> <span class="dl">"</span><span class="s2">post</span><span class="dl">"</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">ajaxSyn</span><span class="p">);</span> <span class="c1">// 发送请求</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">externLoading</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+		<span class="p">}</span>
+
+		<span class="cm">/* 解析数据 */</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">parseAuthRlt</span><span class="p">();</span>
+
+		<span class="k">if</span> <span class="p">(</span><span class="nx">ENONE</span> <span class="o">==</span> <span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">.</span><span class="nx">errorno</span><span class="p">)</span>
+		<span class="p">{</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">setLgPwd</span><span class="p">(</span><span class="nx">pwd</span><span class="p">);</span>
+		<span class="p">}</span>
+
+		<span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">;</span>
+	<span class="p">};</span>
+</code></pre></div></div>
+
+<h4 id="认证数据解析函数">认证数据解析函数</h4>
+
+<p>用来解析上文提到的data2:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>00007 
+00003 
+00001 
+2xDsMK3]2DM4b(]J 
+L+JKFtNljcWoysK$aKf4x6Ud32kvWAWT++i)r+ITeF!U]k}u0+LM3MVd)mIn}p2zMtxi&lt;7Wy9Vx7!x0k&gt;GE{WMtu&gt;a!k^7PCW+si!Ime9OvH{7Z.A0P]$LC4jF(WplrI[&gt;0[kaBBvRPBP4GIV*au!3xa0N1Y7U^$Wgc(.xyf}BAG(Ev4Ei1sK+c{SuOpCG0^W8of}B0$+JK[oYys2]$ZXOhkb.bn!L$$&gt;4pErmg*[kWYAgqP]sn44Fm3j
+</code></pre></div></div>
+
+<p>最后两行分别被存储到authInfo[3]和authInfo[4]，上文this.auth函数中用到了这两个数据。</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">this</span><span class="p">.</span><span class="nx">parseAuthRlt</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">results</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">relCnt</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">.</span><span class="nx">data</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">relCnt</span><span class="p">.</span><span class="nx">lastIndexOf</span><span class="p">(</span><span class="dl">"</span><span class="se">\r\n</span><span class="dl">"</span><span class="p">)</span> <span class="o">==</span> <span class="nx">relCnt</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nx">relCnt</span> <span class="o">=</span> <span class="nx">relCnt</span><span class="p">.</span><span class="nx">substring</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nx">relCnt</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">2</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="nx">results</span> <span class="o">=</span> <span class="nx">relCnt</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="dl">"</span><span class="se">\r\n</span><span class="dl">"</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">EUNAUTH</span> <span class="o">==</span> <span class="k">this</span><span class="p">.</span><span class="nx">result</span><span class="p">.</span><span class="nx">errorno</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nx">authInfo</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nx">results</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+        <span class="nx">authInfo</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="nx">results</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+        <span class="nx">authInfo</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="nx">results</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span> <span class="c1">// 生成id的掩码</span>
+        <span class="nx">authInfo</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="nx">results</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span> <span class="c1">// 生成id的字典</span>
+        <span class="nx">$</span><span class="p">.</span><span class="nx">group</span> <span class="o">=</span> <span class="nx">results</span><span class="p">[</span><span class="mi">4</span><span class="p">];</span>
+        <span class="nx">$</span><span class="p">.</span><span class="nx">pagePRHandle</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="nx">results</span><span class="p">;</span>
+<span class="p">};</span>
+
+</code></pre></div></div>
+
+<h4 id="加密函数">加密函数：</h4>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">this</span><span class="p">.</span><span class="nx">securityEncode</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">input1</span><span class="p">,</span> <span class="nx">input2</span><span class="p">,</span> <span class="nx">input3</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">dictionary</span> <span class="o">=</span> <span class="nx">input3</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">output</span> <span class="o">=</span> <span class="dl">""</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">len</span><span class="p">,</span> <span class="nx">len1</span><span class="p">,</span> <span class="nx">len2</span><span class="p">,</span> <span class="nx">lenDict</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">cl</span> <span class="o">=</span> <span class="mh">0xBB</span><span class="p">,</span> <span class="nx">cr</span> <span class="o">=</span> <span class="mh">0xBB</span><span class="p">;</span>
+
+  <span class="nx">len1</span> <span class="o">=</span> <span class="nx">input1</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+  <span class="nx">len2</span> <span class="o">=</span> <span class="nx">input2</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+  <span class="nx">lenDict</span> <span class="o">=</span> <span class="nx">dictionary</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+  <span class="nx">len</span> <span class="o">=</span> <span class="nx">len1</span> <span class="o">&gt;</span> <span class="nx">len2</span> <span class="p">?</span> <span class="nx">len1</span> <span class="p">:</span> <span class="nx">len2</span><span class="p">;</span>
+
+  <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">index</span> <span class="o">&lt;</span> <span class="nx">len</span><span class="p">;</span> <span class="nx">index</span><span class="o">++</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="nx">cl</span> <span class="o">=</span> <span class="mh">0xBB</span><span class="p">;</span>
+    <span class="nx">cr</span> <span class="o">=</span> <span class="mh">0xBB</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">index</span> <span class="o">&gt;=</span> <span class="nx">len1</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="nx">cr</span> <span class="o">=</span> <span class="nx">input2</span><span class="p">.</span><span class="nx">charCodeAt</span><span class="p">(</span><span class="nx">index</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">index</span> <span class="o">&gt;=</span> <span class="nx">len2</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="nx">cl</span> <span class="o">=</span> <span class="nx">input1</span><span class="p">.</span><span class="nx">charCodeAt</span><span class="p">(</span><span class="nx">index</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="nx">cl</span> <span class="o">=</span> <span class="nx">input1</span><span class="p">.</span><span class="nx">charCodeAt</span><span class="p">(</span><span class="nx">index</span><span class="p">);</span>
+      <span class="nx">cr</span> <span class="o">=</span> <span class="nx">input2</span><span class="p">.</span><span class="nx">charCodeAt</span><span class="p">(</span><span class="nx">index</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="nx">output</span> <span class="o">+=</span> <span class="nx">dictionary</span><span class="p">.</span><span class="nx">charAt</span><span class="p">((</span><span class="nx">cl</span> <span class="o">^</span> <span class="nx">cr</span><span class="p">)</span><span class="o">%</span><span class="nx">lenDict</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="k">return</span> <span class="nx">output</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div></div>
+
+<h3 id="确定流程">确定流程</h3>
+
+<p>现在可以确定流程如下：</p>
+
+<p>登录流程：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>输入密码-&gt;提交-&gt; 加密原始密码并认证 $.auth($.orgAuthPwd(value)); -&gt; 解析返回数据
+</code></pre></div></div>
+
+<p>数据获取流程：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>获取数据请求 -&gt; 401 -&gt; 解析数据到authInfo -&gt; 重新生成id -&gt; 利用新id继续发送请求 -&gt; 返回正常数据
+</code></pre></div></div>
+
+<p>根据流程和以上提到的加密函数，就可以写出一个脚本：</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;?php</span>
+<span class="cd">/**
+ * tplink router control 
+ * 
+ * simulate login to get  external ip, 
+ * and send current ip to someone by email when the ip changed 
+ *
+ * @author dongyado&lt;dongyado@gmail.com&gt;
+ */</span>
+<span class="k">require</span> <span class="s2">"./tools/Util.php"</span><span class="p">;</span>
+<span class="k">require</span><span class="p">(</span><span class="s2">"./tools/HttpClient.class.php"</span><span class="p">);</span>
+<span class="nv">$conf</span> <span class="o">=</span> <span class="k">include</span> <span class="s2">"config.php"</span><span class="p">;</span>
+
+
+<span class="cd">/**
+* encrypt function
+*/</span>
+<span class="k">function</span> <span class="n">securityEncode</span><span class="p">(</span><span class="nv">$input1</span><span class="p">,</span> <span class="nv">$input2</span><span class="p">,</span> <span class="nv">$input3</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nv">$dictionary</span> <span class="o">=</span> <span class="nv">$input3</span><span class="p">;</span>
+    <span class="nv">$output</span>  <span class="o">=</span> <span class="s2">""</span><span class="p">;</span>
+    <span class="nv">$cl</span> <span class="o">=</span> <span class="mh">0xBB</span><span class="p">;</span>
+    <span class="nv">$cr</span> <span class="o">=</span> <span class="mh">0xBB</span><span class="p">;</span>
+    
+    <span class="nv">$len1</span> <span class="o">=</span> <span class="nb">strlen</span><span class="p">(</span><span class="nv">$input1</span><span class="p">);</span>
+    <span class="nv">$len2</span> <span class="o">=</span> <span class="nb">strlen</span><span class="p">(</span><span class="nv">$input2</span><span class="p">);</span>
+    <span class="nv">$lenDict</span> <span class="o">=</span> <span class="nb">strlen</span><span class="p">(</span><span class="nv">$dictionary</span><span class="p">);</span>
+    
+    <span class="nv">$len</span> <span class="o">=</span> <span class="nv">$len1</span> <span class="o">&gt;</span> <span class="nv">$len2</span> <span class="o">?</span> <span class="nv">$len1</span> <span class="o">:</span> <span class="nv">$len2</span><span class="p">;</span>
+    <span class="k">for</span><span class="p">(</span> <span class="nv">$index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nv">$index</span> <span class="o">&lt;</span> <span class="nv">$len</span><span class="p">;</span> <span class="nv">$index</span><span class="o">++</span><span class="p">){</span>
+        <span class="nv">$cl</span> <span class="o">=</span> <span class="mh">0xBB</span><span class="p">;</span>
+        <span class="nv">$cr</span> <span class="o">=</span> <span class="mh">0xBB</span><span class="p">;</span>
+        
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$index</span> <span class="o">&gt;=</span> <span class="nv">$len1</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nv">$cr</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nv">$input2</span><span class="p">[</span><span class="nv">$index</span><span class="p">]);</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nv">$index</span> <span class="o">&gt;=</span> <span class="nv">$len2</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nv">$cl</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nv">$input1</span><span class="p">[</span><span class="nv">$index</span><span class="p">]);</span>
+        <span class="p">}</span><span class="k">else</span> <span class="p">{</span>
+            <span class="nv">$cl</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nv">$input1</span><span class="p">[</span><span class="nv">$index</span><span class="p">]);</span>
+            <span class="nv">$cr</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nv">$input2</span><span class="p">[</span><span class="nv">$index</span><span class="p">]);</span>
+        <span class="p">}</span>
+        
+        <span class="nv">$tmp</span> <span class="o">=</span> <span class="p">(</span><span class="nv">$cl</span> <span class="o">^</span> <span class="nv">$cr</span><span class="p">)</span> <span class="o">%</span> <span class="nv">$lenDict</span><span class="p">;</span>
+        <span class="nv">$output</span> <span class="mf">.</span><span class="o">=</span> <span class="nv">$dictionary</span><span class="p">[</span><span class="nv">$tmp</span><span class="p">];</span>
+    <span class="p">}</span>    
+    <span class="k">return</span> <span class="nv">$output</span><span class="p">;</span>
+<span class="p">}</span>
+
+
+<span class="cd">/**
+* password encrypt from original password
+* 
+*/</span>
+<span class="k">function</span> <span class="n">orgAuthPwd</span><span class="p">(</span><span class="nv">$pwd</span><span class="p">)</span> <span class="p">{</span>
+    	<span class="nv">$strDe</span> <span class="o">=</span> <span class="s2">"RDpbLfCPsJZ7fiv"</span><span class="p">;</span>
+	<span class="nv">$dic</span> <span class="o">=</span> <span class="s2">"yLwVl0zKqws7LgKPRQ84Mdt708T1qQ3Ha7xv3H7NyU84p21BriUWBU43odz3iP4rBL3cD02KZciX"</span><span class="mf">.</span>
+	  <span class="s2">"TysVXiV8ngg6vL48rPJyAUw0HurW20xqxv9aYb4M9wK1Ae0wlro510qXeU07kV57fQMc8L6aLgML"</span><span class="mf">.</span>
+	  <span class="s2">"wygtc0F10a0Dg70TOoouyFhdysuRMO51yY5ZlOZZLEal1h0t9YQW0Ko7oBwmCAHoic4HYbUyVeU3"</span><span class="mf">.</span>
+	  <span class="s2">"sfQ1xtXcPcf1aT303wAQhv66qzW"</span><span class="p">;</span>
+	<span class="k">return</span> <span class="nf">securityEncode</span><span class="p">(</span><span class="nv">$pwd</span><span class="p">,</span> <span class="nv">$strDe</span><span class="p">,</span> <span class="nv">$dic</span><span class="p">);</span>
+<span class="p">}</span>
+
+
+<span class="c1">// ecrypted orginal password</span>
+<span class="nv">$password</span> <span class="o">=</span> <span class="nf">orgAuthPwd</span><span class="p">(</span><span class="nv">$conf</span><span class="p">[</span><span class="s1">'router_passwd'</span><span class="p">]);</span>
+<span class="nv">$httpClient</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">HttpClient</span><span class="p">(</span><span class="nv">$conf</span><span class="p">[</span><span class="s1">'router_host'</span><span class="p">]);</span>
+
+
+<span class="c1">// request example</span>
+<span class="c1">// http:192.168.1.1/?code=2&amp;asyn=1&amp;id=R0TPpo5pDg%3CJr)5k</span>
+
+<span class="nv">$status</span> <span class="o">=</span> <span class="mi">401</span><span class="p">;</span>
+<span class="nv">$id</span> <span class="o">=</span> <span class="s2">""</span><span class="p">;</span> <span class="c1">// global id to store newest id</span>
+<span class="nv">$opath</span> <span class="o">=</span> <span class="s2">"?code=2&amp;asyn=1"</span><span class="p">;</span> <span class="c1">// prefix of path </span>
+<span class="nv">$duration</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="nv">$ip</span> <span class="o">=</span> <span class="s2">""</span><span class="p">;</span>
+
+
+<span class="c1">// loop to check the external ip</span>
+<span class="k">while</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span> <span class="p">{</span>
+    
+    <span class="nv">$path</span> <span class="o">=</span> <span class="nv">$id</span> <span class="o">==</span> <span class="s2">""</span> <span class="o">?</span> <span class="nv">$opath</span> <span class="o">:</span> <span class="nv">$opath</span> <span class="mf">.</span> <span class="s2">"&amp;id=</span><span class="si">{</span><span class="nv">$id</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span>
+    <span class="nv">$ret</span> <span class="o">=</span> <span class="nv">$httpClient</span><span class="o">-&gt;</span><span class="nf">post</span><span class="p">(</span><span class="nv">$path</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="mi">23</span><span class="p">));</span>
+    
+    <span class="c1">// get the reponse data after login</span>
+    <span class="k">echo</span> <span class="s2">"status: "</span><span class="mf">.</span><span class="nv">$ret</span><span class="p">[</span><span class="s1">'status'</span><span class="p">]</span><span class="mf">.</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">;</span>
+    
+    <span class="nv">$status</span> <span class="o">=</span> <span class="nv">$ret</span><span class="p">[</span><span class="s1">'status'</span><span class="p">];</span>
+    <span class="c1">// parse body</span>
+    <span class="nv">$data</span> <span class="o">=</span> <span class="nb">preg_split</span><span class="p">(</span><span class="s2">"/</span><span class="se">\r\n</span><span class="s2">/"</span><span class="p">,</span> <span class="nv">$ret</span><span class="p">[</span><span class="s1">'body'</span><span class="p">]);</span>
+    
+    <span class="c1">// response 401, Unauthoried</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nv">$status</span> <span class="o">==</span> <span class="mi">401</span> <span class="o">||</span> <span class="nv">$id</span> <span class="o">==</span> <span class="s2">""</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">echo</span> <span class="s2">"auth data:"</span> <span class="mf">.</span><span class="nb">json_encode</span><span class="p">(</span><span class="nv">$data</span><span class="p">)</span><span class="mf">.</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">;</span>
+        <span class="c1">// generate new id</span>
+        <span class="nv">$id</span> <span class="o">=</span> <span class="nf">securityEncode</span><span class="p">(</span><span class="nv">$data</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="nv">$password</span><span class="p">,</span> <span class="nv">$data</span><span class="p">[</span><span class="mi">4</span><span class="p">]);</span>
+        <span class="k">echo</span> <span class="s2">"id: </span><span class="si">{</span><span class="nv">$id</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">;</span>
+        <span class="c1">//file_put_contents("./log", "[duration] :" . (time() - $duration)."\n", FILE_APPEND);</span>
+        <span class="nb">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">);</span>
+        <span class="k">continue</span><span class="p">;</span> 
+    <span class="p">}</span> 
+    
+    <span class="c1">// response ok		</span>
+    <span class="c1">// parse data</span>
+    <span class="nv">$_data</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
+    <span class="k">foreach</span><span class="p">(</span><span class="nv">$data</span> <span class="k">as</span> <span class="nv">$item</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nv">$record</span> <span class="o">=</span> <span class="nb">explode</span><span class="p">(</span><span class="s2">" "</span><span class="p">,</span> <span class="nv">$item</span><span class="p">);</span>
+        <span class="k">if</span><span class="p">(</span><span class="nb">count</span><span class="p">(</span><span class="nv">$record</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="nv">$_data</span><span class="p">[</span><span class="nv">$record</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="nv">$record</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+        <span class="k">else</span> 
+            <span class="nv">$_data</span><span class="p">[]</span> <span class="o">=</span> <span class="nv">$item</span><span class="p">;</span>
+    <span class="p">}</span>
+    
+    
+    <span class="c1">// send email if necessary</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="p">(</span><span class="nv">$ip</span> <span class="o">==</span> <span class="s2">""</span><span class="p">)</span> <span class="o">||</span> <span class="p">(</span><span class="nv">$ip</span> <span class="o">!=</span> <span class="s2">""</span> <span class="o">&amp;&amp;</span> <span class="nv">$_data</span><span class="p">[</span><span class="s1">'ip'</span><span class="p">]</span> <span class="o">!=</span> <span class="nv">$ip</span><span class="p">))</span> <span class="p">{</span>
+        <span class="nv">$token</span> <span class="o">=</span> <span class="nc">Util</span><span class="o">::</span><span class="nf">generateToken</span><span class="p">(</span><span class="nv">$conf</span><span class="p">);</span>
+        <span class="c1">// send email</span>
+        <span class="nb">exec</span><span class="p">(</span><span class="s1">'./tools/mail.sh "'</span><span class="mf">.</span><span class="nv">$conf</span><span class="p">[</span><span class="s1">'email'</span><span class="p">]</span><span class="mf">.</span><span class="s1">'" "ipchanged"  "'</span><span class="mf">.</span><span class="nb">date</span><span class="p">(</span><span class="s1">'Y-m-d H:i:s'</span><span class="p">)</span><span class="mf">.</span><span class="s2">" http://"</span><span class="mf">.</span><span class="nv">$_data</span><span class="p">[</span><span class="s1">'ip'</span><span class="p">]</span><span class="mf">.</span><span class="s1">':88/?access_token='</span><span class="mf">.</span><span class="nv">$token</span><span class="mf">.</span><span class="s1">'"'</span><span class="p">);</span>        
+    <span class="p">}</span>
+    <span class="nv">$ip</span> <span class="o">=</span> <span class="nv">$_data</span><span class="p">[</span><span class="s1">'ip'</span><span class="p">];</span>
+    <span class="k">echo</span> <span class="s2">"["</span><span class="mf">.</span><span class="nb">date</span><span class="p">(</span><span class="s1">'Y-m-d H:i:s'</span><span class="p">)</span><span class="mf">.</span><span class="s2">"] ip: </span><span class="si">{</span><span class="nv">$_data</span><span class="p">[</span><span class="s1">'ip'</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">;</span>
+    
+    <span class="c1">// sleep 2 minutes</span>
+    <span class="nb">sleep</span><span class="p">(</span><span class="mi">120</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="cp">?&gt;</span>
+
+</code></pre></div></div>
+
+<p>脚本增加了在IP改变时发送邮件通知的功能，使用了mail.sh脚本，也用到了config.php中的配置信息，源码参见：</p>
+
+<ul>
+  <li><a href="https://github.com/dongyado/remote-open-door">remote-open-door</a> - 项目源码</li>
+  <li><a href="https://github.com/dongyado/remote-open-door/blob/master/getExternalIp.php">getExternalIp.php</a> - 本文实现的脚本</li>
+</ul>
+
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2016-05-15
+     • Category: 
+        
+        <a href="/categories//#tool-ref" >Tool</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#router-ref" >Router</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

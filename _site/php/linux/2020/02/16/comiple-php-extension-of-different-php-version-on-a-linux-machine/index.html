@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>在同一台linux机器编译多个 php 版本的扩展</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/php/linux/2020/02/16/comiple-php-extension-of-different-php-version-on-a-linux-machine/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/php/linux/2020/02/16/comiple-php-extension-of-different-php-version-on-a-linux-machine/">在同一台linux机器编译多个 php 版本的扩展</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		<p>一般 php 扩展编译安装方式如下</p>
+
+<h3 id="扩展编译步骤">扩展编译步骤</h3>
+
+<p>以扩展 ataencoder 为例</p>
+<ul>
+  <li>进入扩展目录</li>
+  <li>./phpize</li>
+  <li>./configure ./configure –enable-ataencoder</li>
+  <li>make</li>
+  <li>make install</li>
+</ul>
+
+<h3 id="编译不同-php-版本的扩展">编译不同 php 版本的扩展</h3>
+
+<p>如果扩展需要兼容多个 php 版本，则需要在本地先编译测试，需要为不同版本编译不同的 so 包, 步骤如下:</p>
+
+<h3 id="安装不同版本的-php">安装不同版本的 php</h3>
+
+<ul>
+  <li>下载对应版本的源码，比如 7.0.33 和 7.2.10 版本</li>
+  <li>分别进入两个版本的目录，编译并安装</li>
+  <li>这个时候系统就有两个版本的 php</li>
+  <li>在 ubuntu 系统上，可以使用 update-alternatives 来设置默认的 php 版本，如果没有这个工具，则可以使用软链接实现</li>
+</ul>
+
+<h3 id="编译安装步骤">编译安装步骤</h3>
+<ul>
+  <li>选定要编译 php 版本的环境</li>
+</ul>
+
+<p>需要保持　php, phpize, php-config 为目标版本。</p>
+
+<p>phpize 用来初始化扩展，确定扩展使用的 php api 版本, 并且生成配置文件比如　configure 脚本<br />
+php-config 被　configure 用来确定包含 php 的头文件和一些库</p>
+
+<p>ubuntu 系统下可以使用　update-alternatives 替换, 其他 linux 发行版如果没有类似的工具，可以使用软链接替换。</p>
+
+<p>+　设置 php 版本</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>update-alternatives --list php
+/usr/bin/php7.0
+/usr/bin/php7.2
+
+# 设置 php 为　7.0 版本
+update-alternatives --set php /usr/bin/php7.0
+
+# 或是使用软链接
+# ln -s /usr/bin/php7.0 /usr/bin/php
+</code></pre></div></div>
+
+<ul>
+  <li>设置 phpize 版本</li>
+</ul>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code># 查看可用的 phpize
+update-alternatives --list phpize
+/usr/bin/phpize7.0
+/usr/bin/phpize7.2
+
+# 设置 phpize 为　7.0 版本
+update-alternatives --set phpize /usr/bin/phpize7.0
+
+# 或是使用软链接
+# ln -s /usr/bin/phpize7.0 /usr/bin/phpize
+</code></pre></div></div>
+
+<ul>
+  <li>设置 php-config 版本</li>
+</ul>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code># 查看可用的 php-config
+update-alternatives --list php-config
+/usr/bin/php-config7.0
+/usr/bin/php-config7.2
+
+# 设置 php-config 为　7.0 版本
+update-alternatives --set php-config /usr/bin/php-config7.0
+
+# 或是使用软链接
+# ln -s /usr/bin/php-config7.0 /usr/bin/php-config
+</code></pre></div></div>
+
+<p>设置完以上步骤后，就可以按文章开头的步骤编译安装 php7.0或其他 php 版本的扩展了。</p>
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2020-02-16
+     • Category: 
+        
+        <a href="/categories//#php-ref" >Php</a>
+        
+        <a href="/categories//#linux-ref" >Linux</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#php-ref" >Php</a>
+        
+            <a href="/tags//#php_extension-ref" >Php_extension</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

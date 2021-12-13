@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>WebAssembly 在 Web 端视频的应用</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/webassembly/2020/11/29/use-webassembly-render-video/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/webassembly/2020/11/29/use-webassembly-render-video/">WebAssembly 在 Web 端视频的应用</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		<p>WebAssembly 从诞生起，赋予了前端更宽阔的应用想象。绘图视频渲染，剪辑，编解码，游戏都有可能基于 WebAssembly 在浏览器端推出相关的产品。</p>
+
+<h3 id="什么是-webassembly">什么是 WebAssembly</h3>
+
+<p>WebAssembly（wasm） 是一种二进制代码格式, 具有高效，跨平台性，包含这种格式的二进制文件，可以被各个平台的浏览器高效的加载，解析执行。</p>
+
+<p>只要浏览器支持 wasm， 用户便可以使用 wasm 所提供的功能，也就是说 wasm 的跨平台性其实是基于浏览器的跨平台性。上层用户编译 wasm 时，<br />
+不需要关注底层架构是什么，只要编译出来正确的二进制文件，就可以在各个支持的浏览器运行。</p>
+
+<p>wasm 增强了 js 的能力，js 不擅长做的事情，比如绘图，编码，解码，数学计算等，都可以在 wasm 中实现，然后 js 就可以使用wasm所提供的能力。</p>
+
+<p>现阶段已经有很多 WebAssembly 的应用，比如 ffmpeg 的编解码应用， unity 3d, unreal engine， google earth等都相继支持了 wasm。</p>
+
+<h3 id="如何使用">如何使用</h3>
+
+<p>WebAssembly 现在支持从 C/C++, go, rust 编译成 wasm 模块。使用 emscripten sdk, 可以从 C/C++ 源码直接编译成 wasm 文件，然后在网页中
+直接加载使用。</p>
+
+<p>参考 https://emscripten.org/docs/getting_started/Tutorial.html 入门。<br />
+参考 https://emscripten.org/docs/compiling/Building-Projects.html 编译项目。</p>
+
+<p>但是如何从网页调用 wasm 的方法。两种方法：</p>
+
+<ul>
+  <li>直接使用 emscripten 提供的底层函数，把wasm 的方法导出到 js 运行环境中。</li>
+  <li>在底层使用 embinding 直接导出 c/c++ 的函数和类，然后在 js 中调用。</li>
+</ul>
+
+<h3 id="如果应用在视频剪辑中">如果应用在视频剪辑中</h3>
+<p>基于 wasm 提供的能力，ffmpeg 解码， 图片解码， OpenGL, 多线程，视频剪辑应用的结构图如下， 该系列文章，会不定期更新，介绍基于此图的架构和技术原理：</p>
+
+<p><img src="/images/post/wasm.png" alt="image" /></p>
+
+<p>参考在线演示 demo: http://cloudedit.atvideo.cc</p>
+
+<h3 id="wasm-的限制和风险">wasm 的限制和风险</h3>
+<p>wasm 的限制与不便</p>
+<ul>
+  <li>运行在一个沙盒中，网页和 js 的限制， wasm 同样会有，比如跨域</li>
+  <li>不能直接读取用户计算机磁盘上的文件</li>
+  <li>能使用的最大内存有限制，各个浏览器的限制都不同，一般为 2G</li>
+  <li>现阶段已经支持了多线程（基于 worker 和 SharedArrayBuffer), 其中 SharedArrayBuffer 在有些浏览器不会默认开启</li>
+  <li>wasm 中申请的内存也需要手动释放</li>
+</ul>
+
+<p>技术本身不会有太多的风险，在于如何去使用。已经出现过基于 wasm 技术开发的挖矿程序，病毒等。<br />
+由于 wasm 是更低级的二进制格式，网页端在这方面的安全检查和拦截还不成熟。现阶段使用了 wasm 技术的网站可能会有更大的安全风险。</p>
+
+<p>随着各大浏览器对 wasm 的完善， wasm 能支持的功能会更多。比如 gc, 更好的异常处理,届时能实现更高效和全面的功能。</p>
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2020-11-29
+     • Category: 
+        
+        <a href="/categories//#webassembly-ref" >Webassembly</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#webassembly-ref" >Webassembly</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

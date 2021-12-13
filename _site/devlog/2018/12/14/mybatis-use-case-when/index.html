@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Mybatis 使用 case when 报错问题</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/devlog/2018/12/14/mybatis-use-case-when/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/devlog/2018/12/14/mybatis-use-case-when/">Mybatis 使用 case when 报错问题</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		<p>近期使用 spring mybatis 开发一个小游戏数据处理系统，其中涉及一个字段增减。</p>
+
+<p>使用的数据库是 mysql, seat_used 为无符号整型，用来记录已经使用的座位，因为更改这个字段有可能是多个程序并发更改，
+所以使用一个座位需要 -1，空出座位时 +1</p>
+
+<p>类似</p>
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">update</span> <span class="k">table_name</span> <span class="k">set</span> <span class="n">seat_used</span> <span class="o">=</span> <span class="n">seat_used</span> <span class="o">+</span> <span class="k">offset</span> <span class="k">where</span> <span class="n">id</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>其中 offset 可能是正数和负数，这样就遇到一个问题，有些时候为了测试或者数据临时更改会导致 seat_used 在等于 0 的时候也会被 -1，
+直接导致 mysql out of range 报错:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>### Error updating database.  Cause: com.mysql.jdbc.MysqlDataTruncation: 
+Data truncation: BIGINT UNSIGNED value is out of range in '(`table_name`.`seat_used` + -(1))'
+</code></pre></div></div>
+
+<p>初步解决这个问题的方法有多种：</p>
+
+<ol>
+  <li>
+    <p>更新之前检查 seat_used 是否等于 0， 大于 0 就更新，这样在并发的情况下，可能会导致该更新的时候不会更新，比如在检查 
+seat_used = 1 的后的这一刻，恰好有个线程更改了这个字段为 0，这样肯定会导致更新出错。</p>
+  </li>
+  <li>
+    <p>把字段类型更改为有符号整型，这就需要在数据输出和更新的时候做好严格的检查，否则极少数情况下会出现数据为负数的问题，
+我选择的是从根本上解决这个问题，不允许有负数这种脏数据出现在数据库。</p>
+  </li>
+  <li>
+    <p>在更新的时候使用 case when 来决定是否更新。</p>
+  </li>
+</ol>
+
+<p>更改 xml mapper 的文件如下：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>      &lt;if test="seatUsed != null"&gt;
+        seat_used = case when seat_used = 0 and #{seatUsed,jdbcType=INTEGER} &lt; 0 then 0 else  seat_used + #{seatUsed,jdbcType=INTEGER} end,
+      &lt;/if&gt;
+</code></pre></div></div>
+
+<p>也就是，当 seat_used = 0 而且 更新值 &lt; 0 的时候，还是更新为0，否则就 设置为 seat_used + 更新值。</p>
+
+<p>执行后会报解析错误</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>nested exception is org.apache.ibatis.builder.BuilderException: Error creating document instance. 
+ Cause: org.xml.sax.SAXParseException; lineNumber: 335; columnNumber: 79; 
+ The content of elements must consist of well-formed character data or markup.
+
+</code></pre></div></div>
+
+<p>错误指向 “ &lt; 0 ”，刚开始以为是 mybatis 不支持这种语法，后来才回过神这是 xml 的解析错误，这样就简单了，加上 CDATA 标签解决这个问题，
+对于 CDATA 里面的数据，xml 不会再解析：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>      &lt;if test="seatUsed != null"&gt;
+        &lt;![CDATA[
+        seat_used = case when seat_used = 0 and #{seatUsed,jdbcType=INTEGER} &lt; 0 then 0 else  seat_used + #{seatUsed,jdbcType=INTEGER} end,
+        ]]&gt;
+      &lt;/if&gt;
+</code></pre></div></div>
+
+<p>以上就是解决 mysql 无符号字段自减导致 out of range错误的方法之一，网上主流方案是更改字段类型，根据自己的需求选择合适的方案即可。</p>
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2018-12-14
+     • Category: 
+        
+        <a href="/categories//#devlog-ref" >Devlog</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#mybatis-ref" >Mybatis</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

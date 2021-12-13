@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>使用 arduino + 树莓派 实现远程控制开门 — 调用 php API控制arduino</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/tool/2016/05/07/open-a-door-with-arduino-and-php/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/tool/2016/05/07/open-a-door-with-arduino-and-php/">使用 arduino + 树莓派 实现远程控制开门 — 调用 php API控制arduino</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		<p>上一节已经把servo的控制程序写好了，可以通过arduino IDE 中的串口监视器给arduino发送指令来控制开门。</p>
+
+<p>这一节介绍如何远程调用API控制arduino开门。</p>
+
+<h3 id="流程">流程</h3>
+
+<p>客户端 -&gt; 调用API -&gt; 发送指令 -&gt; arduino -&gt; 开门</p>
+
+<p>api调用请求经过下面几个步骤：</p>
+
+<p>手机 -&gt; 发送请求 -&gt; 路由器 -&gt; 转发给内网web服务器 -&gt; 服务器执行api，发送指令</p>
+
+<h3 id="硬件环境">硬件环境</h3>
+<p>客户端 
+路由器 -&gt; 内网机器 -&gt; arduino -&gt; 舵机</p>
+
+<h3 id="实现">实现</h3>
+<ul>
+  <li>
+    <p>搭建好内网web服务器
+不差钱请用台式机，差钱的用闲置的笔记本，付不起电费的，树莓派能拯救你。</p>
+
+    <p>搭建好web服务, 这里使用的是ubuntu + nginx + php</p>
+  </li>
+  <li>
+    <p>设置虚拟服务器，在路由器设置端口转发，转发某个端口的请求到内网机器</p>
+  </li>
+  <li>
+    <p>实现php发送指令给arduino</p>
+  </li>
+</ul>
+
+<p>前一节已经介绍了把arduino链接到电脑上，链接后会在/dev目录下产生一个设备文件， 在ubuntu下是/dev/ttyACM0， 系统与arduino的通信都是通过这个文件来实现的，
+所以也可以使用php给这个设备发送指令。</p>
+
+<p>之前提过arduino是可以通过串口通信，github上已经有这个实现： <a href="https://github.com/dongyado/remote-open-door/blob/master/PhpSerial.php">PhpSerail</a></p>
+
+<p>这个类做了两个动作：</p>
+
+<ul>
+  <li>通过stty 命令初始化/dev/ttyACM0 为串口设备</li>
+  <li>使用fwrite向设备发送数据</li>
+</ul>
+
+<p>为了快速实现调用，我毫不犹豫的使用了这个轮子，具体调用代码如下：</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="cp">&lt;?php</span>
+<span class="cd">/**
+ * operation file
+ *
+ * communication with arduino by /dev/tty
+ *
+ * */</span>
+<span class="k">include</span> <span class="s1">'PhpSerial.php'</span><span class="p">;</span>
+<span class="nv">$serial</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">PhpSerial</span><span class="p">;</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="nb">php_sapi_name</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"cli"</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nv">$action</span> <span class="o">=</span> <span class="nb">trim</span><span class="p">(</span> <span class="nv">$argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="p">);</span>  <span class="c1">// 获取参数，可能为open或者1</span>
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="k">exit</span><span class="p">(</span><span class="s2">"Access Denied"</span><span class="p">);</span>
+<span class="p">}</span>
+
+
+<span class="c1">// First we must specify the device. This works on both linux and windows (if</span>
+<span class="c1">// your linux serial device is /dev/ttyS0 for COM1, etc)</span>
+
+<span class="nv">$serial</span><span class="o">-&gt;</span><span class="nf">deviceSet</span><span class="p">(</span><span class="s2">"/dev/ttyACM0"</span><span class="p">);</span> <span class="c1">// 这里设置设备路径</span>
+
+<span class="c1">// We can change the baud rate, parity, length, stop bits, flow control</span>
+<span class="nv">$serial</span><span class="o">-&gt;</span><span class="nf">confBaudRate</span><span class="p">(</span><span class="mi">9600</span><span class="p">);</span> <span class="c1">// 设置波特率，跟servo程序里面的 Serial.begin(9600); 相对应</span>
+<span class="nv">$serial</span><span class="o">-&gt;</span><span class="nf">confParity</span><span class="p">(</span><span class="s2">"none"</span><span class="p">);</span>
+<span class="nv">$serial</span><span class="o">-&gt;</span><span class="nf">confCharacterLength</span><span class="p">(</span><span class="mi">8</span><span class="p">);</span>
+<span class="nv">$serial</span><span class="o">-&gt;</span><span class="nf">confStopBits</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+<span class="nv">$serial</span><span class="o">-&gt;</span><span class="nf">confFlowControl</span><span class="p">(</span><span class="s2">"none"</span><span class="p">);</span>
+
+<span class="c1">// Then we need to open it</span>
+<span class="nv">$serial</span><span class="o">-&gt;</span><span class="nf">deviceOpen</span><span class="p">(</span><span class="s2">"w+"</span><span class="p">);</span>
+
+<span class="c1">// must sleep at least 2 seconds</span>
+<span class="c1">// 这里必须延迟至少2秒来保证数据能够被arduino接收</span>
+<span class="nb">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+
+<span class="c1">// To write into</span>
+<span class="nv">$serial</span><span class="o">-&gt;</span><span class="nf">sendMessage</span><span class="p">(</span><span class="nv">$action</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+
+<span class="c1">// Or to read from</span>
+<span class="nv">$read</span> <span class="o">=</span> <span class="nv">$serial</span><span class="o">-&gt;</span><span class="nf">readPort</span><span class="p">(</span><span class="mi">9600</span><span class="p">);</span>
+<span class="c1">//echo $read."\n===\n";</span>
+<span class="c1">// If you want to change the configuration, the device must be closed</span>
+<span class="nv">$serial</span><span class="o">-&gt;</span><span class="nf">deviceClose</span><span class="p">();</span>
+
+<span class="cp">?&gt;</span>
+</code></pre></div></div>
+
+<p>如果直接web调用这个文件，arduino偶尔会出现重复操作（开门两次），但是在cli模式下不会出现这个问题，这是个很奇怪的问题，还没有查出具体原因，所以先想了简单的办法解决。</p>
+
+<p>在index.php执行operation.php:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;?php</span>
+    <span class="nb">exec</span><span class="p">(</span><span class="s2">"php operation.php </span><span class="si">{</span><span class="nv">$action</span><span class="si">}</span><span class="s2">"</span><span class="p">);</span>
+<span class="cp">?&gt;</span>
+</code></pre></div></div>
+
+<p>全部代码：</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;?php</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="k">isset</span><span class="p">(</span><span class="nv">$_GET</span><span class="p">[</span><span class="s1">'action'</span><span class="p">]))</span> <span class="p">{</span>
+  
+    <span class="nv">$action</span> <span class="o">=</span> <span class="nb">trim</span><span class="p">(</span><span class="nv">$_GET</span><span class="p">[</span><span class="s1">'action'</span><span class="p">]);</span>
+    <span class="c1">// open the door</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nv">$action</span> <span class="o">==</span> <span class="s1">'open'</span><span class="p">)</span> <span class="c1">//在servo的控制程序使用了open作为开门的指令</span>
+    <span class="p">{</span>
+        <span class="cd">/**
+          * visit operation will cause the arduino work inconrrect  ,
+          * but work fine if in cli mode 
+          * */</span>
+        <span class="nb">exec</span><span class="p">(</span><span class="s2">"php operation.php </span><span class="si">{</span><span class="nv">$action</span><span class="si">}</span><span class="s2">"</span><span class="p">);</span>  <span class="c1">// 执行operation.php </span>
+        <span class="k">exit</span><span class="p">(</span><span class="s2">"Opened"</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">exit</span><span class="p">(</span><span class="s2">"Failed"</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="cp">?&gt;</span>
+</code></pre></div></div>
+
+<p>现在已经可以直接访问 http://host/index.php?action=open 控制开门了，只要能访问到家里的路由器，就能随时执行开门的动作，awesome!</p>
+
+<p>下一节包括以下内容：</p>
+
+<ul>
+  <li>为api加上权限验证</li>
+  <li>检测路由器IP变化并发送邮件通知的脚本</li>
+</ul>
+
+<p>该主题其他文章： 
+<a href="http://dongyado.com/categories/#remote-control-door-ref">Remote-control-door</a></p>
+
+<p>相关链接：</p>
+
+<ul>
+  <li><a href="https://github.com/dongyado/remote-open-door">remote-open-door</a> - 项目源码</li>
+  <li><a href="https://github.com/dongyado/remote-open-door/blob/master/arduino_control/servo/servo.ino">servo</a> - 舵机(servo)控制程序</li>
+  <li><a href="https://github.com/dongyado/remote-open-door/blob/master/PhpSerial.php">PhpSerail</a></li>
+</ul>
+
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2016-05-07
+     • Category: 
+        
+        <a href="/categories//#tool-ref" >Tool</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#树莓派-ref" >树莓派</a>
+        
+            <a href="/tags//#arduino-ref" >Arduino</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

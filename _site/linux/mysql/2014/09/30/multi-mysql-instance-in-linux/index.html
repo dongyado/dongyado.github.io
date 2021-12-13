@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Mysql在linux下配置单机多实例</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="有些时候，身边没有两台电脑的时候，又要搭建主从服务器的时候，只能在本机运行两个mysql实例进行测试，测试环境是ubuntu 13.10。
+">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/linux/mysql/2014/09/30/multi-mysql-instance-in-linux/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/linux/mysql/2014/09/30/multi-mysql-instance-in-linux/">Mysql在linux下配置单机多实例</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		有些时候，身边没有两台电脑的时候，又要搭建主从服务器的时候，只能在本机运行两个mysql实例进行测试，测试环境是ubuntu 13.10。
+<!-- more -->
+
+<p>在单机上实现多实例，这种情况不仅仅是在缺少服务器的情况下适用，更多的应用场景可能为了压榨服务器的性能，而在一个服务器运行多个mysql实例。</p>
+<p>mysql的开发者肯定会遇到这样的问题，所以早就给我们提供了便捷的工具mysqld_multi。为了方便管理，一般把多实例的配置信息写在一个文件，然后用--defaults-extra-file指定配置文件启动服务。</p>
+<p>在写配置文件之前，我们需要为每个实例创建数据库，并授权。</p>
+<p>mysql默认的数据库文件目录是/var/lib/mysql，为第二个实例创建文件夹，并更改所有者和组:</p>
+<pre class="lang:sh decode:true">$ sudo mkdir -m 700 mysqld2
+
+$ sudo chown mysql:mysql mysqld2/</pre>
+<p>要使用mysql_install_db对文件夹初始化。</p>
+<p>因为是做测试我用的同一个日志文件夹，所以这里不做配置，我的配置文件/etc/mysqld_multi.cnf如下:</p>
+<pre class="lang:default decode:true">[mysqld_multi]
+mysqld=/usr/sbin/mysqld
+mysqladmin=/usr/bin/mysqladmin
+user=mysql
+
+[mysqld1]
+log-bin=mysql-bin
+binlog_do_db=test
+server-id=1
+socket=/var/run/mysqld/mysqld.sock
+port=3306
+pid-file=/var/run/mysqld/mysqld.pid
+datadir=/var/lib/mysql
+user=mysql
+
+[mysqld2]
+server-id=2
+socket=/var/run/mysqld/mysqld2.sock
+port=3307
+pid-file=/var/run/mysqld/mysqld2.pid
+datadir=/var/lib/mysqld2
+user=mysql</pre>
+<p>特别注意的是server-id不能重复，后面要根据这个标识启动对应的实例，端口也不能相同，然后我在第一个加了log-bin，并指定了binlog_do_db = test，只是为后面做主从同步做准备，这里不详细说明。</p>
+<p>如果我们现在直接启动，mysql会报无权限访问/var/lib/mysqld2的错误，这是因为我们还有一步授权没有做，用过linux的可能都会听过apparmor，是一个高效和易于使用的Linux系统安全应用程序，ubuntu也是采用这个程序对应用程序做了安全限制，如果没有没有得到授权，应用程序将不能操作一些文件目录。所以我们需要在对应的授权文件加入mysql对/var/lib/mysqld2的权限，这个文件是/etc/apparmor.d/usr.sbin.mysqld，在里面加上以下代码:</p>
+<pre class="lang:default decode:true">  /var/log/mysqld2.log rw,
+  /var/log/mysqld2.err rw,
+  /var/lib/mysqld2/ r,
+  /var/lib/mysqld2/** rwk,
+  /var/log/mysqld2/ r,
+  /var/log/mysqld2/* rw,
+  /var/run/mysqld/mysqld2.pid rw,
+  /var/run/mysqld/mysqld2.sock w,
+  /run/mysqld/mysqld2.pid rw,
+  /run/mysqld/mysqld2.sock w,</pre>
+<p>无非就是加入了对相关文件的读写权限。</p>
+<p>至此我们就能使用 mysqld_multi启动对应的实例了，先查看实例的状态 ：</p>
+<pre class="lang:default decode:true">$ sudo mysqld_multi --defaults-extra-file=/etc/mysqld_multi.cnf report
+Reporting MySQL servers
+MySQL server from group: mysqld1 is running
+MySQL server from group: mysqld2 is not running</pre>
+<p>显示第一个已经运行成功，那我们启动第二个:</p>
+<pre class="lang:default decode:true">$ sudo mysqld_multi --defaults-extra-file=/etc/mysqld_multi.cnf start 2
+$ sudo mysqld_multi --defaults-extra-file=/etc/mysqld_multi.cnf report
+Reporting MySQL servers
+MySQL server from group: mysqld1 is running
+MySQL server from group: mysqld2 is running</pre>
+<p>说明启动成功，我们知道mysql的端口是3306,  <span style="font-size: 16px;"> 那我们就必须指定端口才能连接上第二个实例:</span></p>
+<pre class="lang:default decode:true">$ mysql -h127.0.0.1 -P3307 -uroot -p
+Enter password: 
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 79
+Server version: 5.5.35-0ubuntu0.13.10.2-log (Ubuntu)
+
+Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql&gt;</pre>
+<p>这里需要注意一下，貌似必须要指定-h为127.0.0.1才能链接3307，不然默认链接上了3306。</p>
+<p>这样我们就实现了单机多实例，需要特别注意的地方就是权限的配置，不然就报各种错误，下一步我们就可以用它做主从备份测试了。<span style="font-size: 16px;"> </span></p>
+<p>&nbsp;</p>
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2014-09-30
+     • Category: 
+        
+        <a href="/categories//#linux-ref" >Linux</a>
+        
+        <a href="/categories//#mysql-ref" >Mysql</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#linux-ref" >Linux</a>
+        
+            <a href="/tags//#mysql-ref" >Mysql</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

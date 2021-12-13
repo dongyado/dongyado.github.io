@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>CentOS 安装 nvidia 驱动, OpenGL</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/linux/video/audio%20tech/2020/05/13/centos-install-nvidia-driver-and-opengl/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/linux/video/audio%20tech/2020/05/13/centos-install-nvidia-driver-and-opengl/">CentOS 安装 nvidia 驱动, OpenGL</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		<p>Ve SDK 需要兼容 nvidia 最新版 driver, nvcodec。特意组装了台式机，显卡为 gtx 1650。</p>
+
+<p>需要的环境如下：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>os: CentOS 7.5
+gcc: 4.8.5.39
+gpu driver: 440.82 显卡驱动
+nvcodec: 9.2 视频硬编解码 SDK 
+</code></pre></div></div>
+
+<h2 id="安装依赖">安装依赖</h2>
+
+<h4 id="安装内核构建依赖">安装内核构建依赖</h4>
+
+<p>nvidia 驱动在安装时需要重新构建内核以加载 gpu 驱动，需要安装 kernel-devel, kernel-headers</p>
+
+<p>安装的 kernel-devel, kernel-headers 的版本要严格和当前内核版本一致。否则安装过程中会出现找不到 kernel headers 的错误</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sudo yum -y insall gcc dkms epel-release
+
+# 如果 yum 搜索到的 kernel-devel 和 kernel-headers 一致
+sudo yum insall  kernel-devel  
+sudo yum install kernel-headers
+
+# 低版本比如 cenos 7.5 使用 yum 安装的版本与内核版本不一致
+# 需要手动下载对应的版本安装，比如内核版本为 3.10.0-862
+
+wget http://vault.centos.org/7.5.1804/os/x86_64/Packages/kernel-devel-3.10.0-862.el7.x86_64.rpm
+wget http://vault.centos.org/7.5.1804/os/x86_64/Packages/kernel-headers-3.10.0-862.el7.x86_64.rpm
+
+sudo yum install kernel-devel-3.10.0-862.el7.x86_64.rpm
+sudo yum install kernel-headers-3.10.0-862.el7.x86_64.rpm
+</code></pre></div></div>
+
+<h4 id="禁用系统自带的-nouveau-驱动-可选">禁用系统自带的 nouveau 驱动 (可选)</h4>
+
+<p>nouveau 是一个 nvidia 显卡的第三方开源驱动，一般 linux 发行版的内核都会默认自带并使用这个驱动模块。
+但是一些新特性没有支持。</p>
+
+<p>新版 nvidia 驱动安装时会自动禁用 nouveau</p>
+
+<p>查看 nouveau 有没有启用使用</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>lsmod | grep nouveau
+</code></pre></div></div>
+
+<p>禁用 nouveau；</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sudo vim /etc/modprobe.d/blacklist-nouveau.conf
+
+# 添加以下代码
+blacklist nouveau
+options nouveau modeset=0
+</code></pre></div></div>
+
+<h2 id="安装驱动">安装驱动</h2>
+
+<h4 id="下载安装">下载安装</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>wget https://us.download.nvidia.cn/XFree86/Linux-x86_64/440.82/NVIDIA-Linux-x86_64-440.82.run
+sudo chmod +x NVIDIA-Linux-x86_64-440.82.run
+sudo ./NVIDIA-Linux-x86_64-440.82.run
+</code></pre></div></div>
+
+<h4 id="重启检查是否安装成功">重启检查是否安装成功</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>nvidia-smi
+</code></pre></div></div>
+
+<h4 id="检查-opengl-信息">检查 opengl 信息</h4>
+
+<p>nvidia 驱动自带 openGL 的实现，默认随着驱动被安装。</p>
+
+<ol>
+  <li>使用 nvidia-settings 查看</li>
+</ol>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ nvidia-settings -g | grep -i "opengl"
+OpenGL vendor string: NVIDIA Corporation
+OpenGL renderer string: GeForce GTX 1650/PCIe/SSE2
+OpenGL version string: 4.6.0 NVIDIA 440.82
+OpenGL extensions:
+
+</code></pre></div></div>
+
+<ol>
+  <li>使用 mesa-utils
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ sudo yum -y install mesa-utils
+$ glxinfo | grep -i opengl
+OpenGL vendor string: NVIDIA Corporation
+OpenGL renderer string: GeForce GTX 1650/PCIe/SSE2
+OpenGL core profile version string: 4.4.0 NVIDIA 440.82
+OpenGL core profile shading language version string: 4.40 NVIDIA via Cg compiler
+OpenGL core profile context flags: (none)
+OpenGL core profile profile mask: core profile
+OpenGL core profile extensions:
+OpenGL version string: 4.6.0 NVIDIA 440.82
+OpenGL shading language version string: 4.60 NVIDIA
+OpenGL context flags: (none)
+OpenGL profile mask: (none)
+OpenGL extensions:
+OpenGL ES profile version string: OpenGL ES 3.2 NVIDIA 440.82
+OpenGL ES profile shading language version string: OpenGL ES GLSL ES 3.20
+OpenGL ES profile extensions:
+</code></pre></div>    </div>
+  </li>
+</ol>
+
+<h2 id="安装-cuda-驱动可选">安装 cuda 驱动（可选)</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>wget http://developer.download.nvidia.com/compute/cuda/10.2/Prod/local_installers/cuda_10.2.89_440.33.01_linux.run
+chmod +x cuda_10.2.89_440.33.01_linux.run
+sudo ./cuda_10.2.89_440.33.01_linux.run
+</code></pre></div></div>
+
+<h3 id="其他实用命令">其他实用命令</h3>
+
+<ul>
+  <li>查看显卡信息</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ sudo lshw -numeric -C display
+  *-display UNCLAIMED       
+       description: VGA compatible controller
+       product: NVIDIA Corporation [10DE:1F82]
+       vendor: NVIDIA Corporation [10DE]
+       physical id: 0
+       bus info: pci@0000:01:00.0
+       version: a1
+       width: 64 bits
+       clock: 33MHz
+       capabilities: pm msi pciexpress vga_controller bus_master cap_list
+       configuration: latency=0
+       resources: memory:f6000000-f6ffffff memory:e0000000-efffffff memory:f0000000-f1ffffff ioport:e000(size=128) memory:f7000000-f707ffff
+</code></pre></div></div>
+
+<p>或</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ lspci | grep -i nvidia
+01:00.0 VGA compatible controller: NVIDIA Corporation Device 1f82 (rev a1)
+01:00.1 Audio device: NVIDIA Corporation Device 10fa (rev a1)
+</code></pre></div></div>
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2020-05-13
+     • Category: 
+        
+        <a href="/categories//#linux-ref" >Linux</a>
+        
+        <a href="/categories//#video/audio tech-ref" >Video/audio tech</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#nvidia-ref" >Nvidia</a>
+        
+            <a href="/tags//#opengl-ref" >Opengl</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

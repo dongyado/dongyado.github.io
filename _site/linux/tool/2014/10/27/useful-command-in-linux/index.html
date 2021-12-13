@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Linux常用命令备忘</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="
+">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/linux/tool/2014/10/27/useful-command-in-linux/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/linux/tool/2014/10/27/useful-command-in-linux/">Linux常用命令备忘</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		<!-- more -->
+
+<h4 id="1-删除过期文件">1. 删除过期文件</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>find /tmp/ -type f -mtime +1 -exec rm -f {} 
+</code></pre></div></div>
+
+<p>/tmp/是路径
+-type 是文件类型 f 表示普通文件
+-mtime 表示最后修改时间 +1 表示一天之前
+-exec 表示执行命令 rm -f
+{} 表示查找到的文件名</p>
+
+<p>注意</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>find /tmp/ -type f -mtime +1 -exec rm -f {} \;  # {} 与 \之间必须有一个空格
+</code></pre></div></div>
+
+<p>结合crontab进行定时清理
+     0 4 * * * find /tmp/ -type f -mtime +1 -exec rm -f {} \;</p>
+
+<p>表示每天凌晨4点清理。</p>
+
+<h4 id="2-网络带宽查看">2. 网络带宽查看</h4>
+
+<ul>
+  <li>nload 很好的一个工具，按TAB键切换网卡</li>
+  <li>bmon 提供了很详细的带宽信息</li>
+</ul>
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2014-10-27
+     • Category: 
+        
+        <a href="/categories//#linux-ref" >Linux</a>
+        
+        <a href="/categories//#tool-ref" >Tool</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#linux-ref" >Linux</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

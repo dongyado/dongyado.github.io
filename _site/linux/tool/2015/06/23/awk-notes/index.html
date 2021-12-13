@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Awk笔记</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="
+">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/linux/tool/2015/06/23/awk-notes/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/linux/tool/2015/06/23/awk-notes/">Awk笔记</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		<!-- more -->
+<h3 id="why-use-awk">Why use awk?</h3>
+<p>Awk is a great tool to handle log and other text file.</p>
+
+<h3 id="basic-syntax">Basic syntax</h3>
+<p>Awk allows you to write two special routines that can be executed before any input is read and after all input is read. These are the procedures associated with the BEGIN and END rules, respectively.In other words, you can do some preprocessing before the main input loop is ever executed and you can do some postprocessing after the main input loop has terminated. The BEGIN and ENDprocedures are optional. like this:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ awk "BEGIN {do some preprocessing} { do the work, worked on the input file} END {do some postprocessing}"
+</code></pre></div></div>
+
+<h3 id="some-constants">Some Constants</h3>
+<p>| Item      |    Description |
+| :——– | ——–| 
+|FS		| field separator. by default, its value is a single space|
+|OFS	| output field separator |
+|NF		|number of fields for the current input record|
+|RS		|record separator|
+|ORS	|output reacord sepatator|
+|FILENAME	 |the name of the current input file|
+CONVFMT	:
+number-to-string conversions</p>
+<ol>
+  <li>default value is “%.6g”
+$ awk ‘BEGIN {str = (5.5 + 3.2) “ is a nice value”; print str; }’
+ 8.7 is a nice value</li>
+  <li>change its value to “%d”
+$ awk ‘BEGIN {CONVFMT=”%d”;str = (5.5 + 3.2) “ is a nice value”;print str; }’
+8 is a nice value
+|</li>
+</ol>
+
+<p>NOTE:
+In POSIX awk, assigning a new value to FS has no effect on the current input line; it only affects the next input line.</p>
+
+<h3 id="escape-sequences">Escape Sequences</h3>
+<p>| Sequence  |Description |
+| :——– | ——–   |
+|\a| Alert character, usually ASCII BEL character
+|\b| Backspace
+|\f| Formfeed
+|\n| Newline
+|\r| Carriage return
+|\t| Horizontal tab
+|\v| Vertical tab
+|\ ddd| Character represented as 1 to 3 digit octal value
+|\x| hex Character represented as hexadecimal value
+|\ c| Any literal character c (e.g., " for “ )</p>
+
+<h3 id="relational-operators">Relational Operators</h3>
+<p>| Operator  |Description |
+| :——– | ——–   |
+|&lt;	|Less than
+|&gt;|	Greater than
+|&lt;=|	Less than or equal to
+|&gt;=|	Greater than or equal to
+|==|	Equal to
+|!=|	Not equal to
+|~|	Matches
+|!~|	Does not match</p>
+
+<h3 id="format-specifiers-used-in-printf">Format Specifiers Used in printf</h3>
+<p>| Character | Description |
+| :——– | ——–    |
+|c|	ASCII character
+|d|	Decimal integer
+|i|	Decimal integer. (Added in POSIX)
+|e|	Floating-point format ([-] d . precision e [+-] dd )
+|E|	Floating-point format ([-] d . precision E [+-] dd )
+|f|	Floating-point format ([-] ddd . precision )
+|g|	e or f conversion, whichever is shortest, with trailing zeros removed
+|G|	E or f conversion, whichever is shortest, with trailing zeros removed
+|o|	Unsigned octal value
+|s|	String
+|x|	Unsigned hexadecimal number. Uses a - f for 10 to 15
+|X|	Unsigned hexadecimal number. Uses A - F for 10 to 15
+|%	|Literal %</p>
+
+<h3 id="awks-built-in-string-functions">Awk’s Built-In String Functions</h3>
+<p>| Awk Function  |Description |
+|  :————– | ——–   |
+|gsub ( r , s , t )	|Globally substitutes s for each match of the regular expression r in the string t . Returns the number of substitutions. If t is not supplied, defaults to $0 .
+|index ( s , t )	| Returns position of substring t in string s or zero if not present.
+| length ( s )	| Returns length of string s or length of $0 if no string is supplied.
+| match ( s , r )	| Returns either the position in s where the regular expression r begins, or 0 if no occurrences are found. Sets the values of RSTARTand RLENGTH .
+| split ( s , a , sep)	| Parses string s into elements of array a using field separator sep ; returns number of elements. If sep is not supplied, FS is used. Array splitting works the same way as field splitting.
+| sprintf (“ fmt “,expr )	| Uses printf format specification for expr .
+| sub ( r , s , t )	| Substitutes s for first match of the regular expression r in the string t . Returns 1 if successful; 0 otherwise. If t is not supplied, defaults to $0 .
+| substr ( s , p , n)	| Returns substring of string s at beginning position p up to a maximum length of n . If n is not supplied, the rest of the string from p is used.
+| tolower ( s )	| Translates all uppercase characters in string s to lowercase and returns the new string.
+| toupper ( s )	| Translates all lowercase characters in string s to uppercase and returns the new string.</p>
+
+<h3 id="limitations">Limitations</h3>
+<p>| Item     | Limit       |
+| :——– | ——–    |
+ |Number of fields per record 	 |100
+ |Characters per input record |	3000
+ |Characters per output record	 |3000
+ |Characters per field |	1024
+ |Characters per printf string |	3000 
+ |Characters in literal string	 |400
+ |Characters in character class	 |400
+ |Files open |	15
+ |Pipes open |	1</p>
+
+<h3 id="examples">Examples</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># filesum: list files and total size in bytes
+# input: long listing produced by "ls -l"
+
+
+#1 output column headers
+BEGIN {print "BYTES", "\t", "FILE"}
+
+
+
+#2 test for 9 fields; files begins with "-"
+NF == 9 &amp;&amp; /^-/ {
+sum += $5 # accumulate size of file
+++filenum # count number of files
+print $5, "\t", $9
+}
+
+
+#3 test for 9 fields; directory begins with "d"
+NF == 9 &amp;&amp; /^d/ {
+sum += $5
+++filenum 
+print $5, "\t", $9
+}
+
+
+#4 test for ls -lR line ./dir
+$1 ~ /^\..*:$/{
+print "\t" $0 # print &lt;dir&gt; and name
+}
+
+
+#5 once all is done
+END {
+# print total file size and number of files
+print "Total: ", sum, "bytes (" filenum " files)"
+}
+</code></pre></div></div>
+
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2015-06-23
+     • Category: 
+        
+        <a href="/categories//#linux-ref" >Linux</a>
+        
+        <a href="/categories//#tool-ref" >Tool</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#awk-ref" >Awk</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

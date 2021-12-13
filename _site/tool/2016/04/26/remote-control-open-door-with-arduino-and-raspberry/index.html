@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>使用 arduino + 树莓派 实现远程控制开门 — 介绍</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/tool/2016/04/26/remote-control-open-door-with-arduino-and-raspberry/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/tool/2016/04/26/remote-control-open-door-with-arduino-and-raspberry/">使用 arduino + 树莓派 实现远程控制开门 — 介绍</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		<p>如标题，最近折腾了这么个有趣且实用的东西，记录下思路和步骤，详细步骤将会以教程的方式后续发布，希望能帮助到有同样想法的同学。</p>
+
+<h3 id="为什么折腾">为什么折腾</h3>
+<p>去过小区的人都知道，小区的大门有个门铃，输入指定的房号，那个房子的门铃电话就会响，然后业主拿起电话，
+询问访客，如果是认识的人，就会按下电话上的开门按钮打开楼下的大门，然后访问顺利登门拜访。</p>
+
+<p>然而现在深圳城中村的一些高层农民房也使用了这种方式，而且楼下大门抛弃了钥匙，必须要刷居住证才能开门，这就有个问题了。</p>
+
+<p>在深圳之前办的居住证在今年六月份就要过期了，必须重新办理，但是社保没有连续交满一年的不能办居住证，很不幸，我就是其中一员。</p>
+
+<p>所以，才会萌生使用远程控制接电话开门的想法。
+之前听说过arduino，也听说过机械臂，第一个想法就是使用arduino控制机械壁接电话，开门。后来详细了解了一下，
+发现不太适合，一则成本过高，二则难度颇高，不一定有充足的时间做完。</p>
+
+<p>最后得知舵机这个东西，然后发现其实用两个舵机就能完美解决。
+电话上面无非就两个按钮，调整好舵机的位置，控制舵机转动的顺序和角度，就能轻松实现开门。</p>
+
+<h3 id="用到的东西">用到的东西</h3>
+
+<ul>
+  <li>arduino x 1 - 某宝，正版的板子也就100以下， 我买了个套件，一共200不到，包括一些常用的组件</li>
+  <li>舵机 x 2 - 价格10块左右</li>
+  <li>树莓派 x 1 - 正版250左右吧，然后自己装好ubuntu, nginx, php</li>
+  <li>micro sd x 1 - 给树莓派使用，系统就是装在内存卡上的，买class10的16G，就够用了</li>
+  <li>红外线接收器 x 1 - 套件自带</li>
+  <li>遥控器 x 1 - 套件自带</li>
+</ul>
+
+<h3 id="开发步骤">开发步骤</h3>
+
+<p>主要的步骤如下，为避免篇幅过长，内容较多的步骤会单独作为一篇文章后续发布：</p>
+
+<ul>
+  <li>
+    <p>arduino 控制舵机</p>
+
+    <p>这部分最重要，首先得准备好舵机的控制程序，根据串口通讯传送的指令作出不同的动作。
+arduino使用的是processing语言，和c语言很相似，关键是arduino提供了IDE和很多库文件，应有尽有,很方便。</p>
+  </li>
+  <li>
+    <p>web调用控制舵机</p>
+
+    <p>这部分通过nginx,php通过phpserial实现与arduino的通讯。</p>
+  </li>
+  <li>
+    <p>获取路由器外部IP</p>
+
+    <p>这部分想办法解决获取路由器外部IP的问题，</p>
+  </li>
+  <li>
+    <p>ip改动发送邮件脚本</p>
+
+    <p>运营商分配的外网IP随时会变，这就需要写一个脚本，检测IP的状态，如发生改变，发送邮件通知即可。</p>
+  </li>
+  <li>
+    <p>树莓派做服务器</p>
+
+    <p>用笔记本做服务器功耗太大，树莓派是个不错的选择,功耗低，后续可玩性也很高。</p>
+  </li>
+  <li>
+    <p>安全问题</p>
+
+    <p>web 调用肯定有安全问题，授权登录是必须加上的。</p>
+  </li>
+</ul>
+
+<h3 id="折腾总结">折腾总结</h3>
+
+<p>智能家居差不多也是这样的思路，家里一个服务器，连着各种硬件，通过手机端访问家里的服务器控制家里的硬件。
+这是一个很热的行业，很多人都认为做这些东西需要扎实的硬件知识，单片机知识，但是树莓派和arduino就是为那些外行设计的，
+只需要稍微了解一下电路，电阻，gnd是啥东西，就可以作出自己的想做的东西，这简直就是外行人（设计师，艺术家）的福利，可以作出各种不可思议的作品出来。</p>
+
+<p>Tinkering是arduino的精神，倡议先动手做，有想法就去做吧，第一次没成功，没事，tinkering it again and again, finally, it will work.</p>
+
+<p>该主题其他文章： 
+<a href="http://dongyado.com/categories/#remote-control-door-ref">Remote-control-door</a></p>
+
+<p>相关链接：</p>
+
+<ul>
+  <li><a href="https://github.com/dongyado/remote-open-door">remote-open-door</a> - 项目源码</li>
+</ul>
+
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2016-04-26
+     • Category: 
+        
+        <a href="/categories//#tool-ref" >Tool</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#树莓派-ref" >树莓派</a>
+        
+            <a href="/tags//#arduino-ref" >Arduino</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

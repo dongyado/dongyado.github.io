@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>LRU算法的原理和实现</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/algorithm/2016/04/23/implement-lru-cache-by-yourself/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/algorithm/2016/04/23/implement-lru-cache-by-yourself/">LRU算法的原理和实现</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		<h3 id="lru-的来源">LRU 的来源</h3>
+
+<p>LRU， Least Recently Used 近期最少使用算法， 常应用于缓存中的数据淘汰，
+ 其核心思想是“如果数据最近被访问过，那么将来被访问的几率也更高“。</p>
+
+<h3 id="一般实现思路">一般实现思路</h3>
+
+<p>仔细看下这个算法的定义： 近期最少使用算法，其实就是按照”近期最少使用”这个条件去淘汰相应的数据。</p>
+
+<p>举个例子，内存的访问速度要远远大于硬盘，所以应该把经常使用的数据放内存，而不常用的数据放磁盘,
+假如有一块内存只能存放100个数据，有个程序负责管理这块内存的数据，流程大致如下：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>客户端 -&gt; 请求某个数据 -&gt; 程序处理 -&gt; 内存中有数据 -&gt; 直接返回数据  
+							|-&gt; 内存无数据 -&gt; 读取磁盘 -&gt; 存储到内存 -&gt; 返回数据
+</code></pre></div></div>
+
+<p>这样，当不停的访问新的数据，内存迟早会满。</p>
+
+<p>所以就需要一个算法，在内存满的时候，淘汰那些不常用的数据，空出空间存储新的数据，这时可以用LRU。</p>
+
+<p>既然是淘汰最近最少使用的数据，姑且就可以理解为，当内存满了的那个时刻，内存中，哪些数据最后一次被访问的时间最小，
+不表示哪些数据是冷数据，应该被移除。</p>
+
+<p>假如每条数据有一个属性lasttime，用来记录被访问时刻的时间，这样，每一条数据都有一个最后访问时间，
+当内存满的时候，遍历所有元素，删除最后访问时间最小的那个元素：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>lasttime = current_time()
+lastKey = null;
+if list full:
+    foreach each item of list:
+        if item.lasttime &lt; lasttime:
+            lasttime = item.lasttime
+            lastKey = item.key
+</code></pre></div></div>
+
+<p>然后把lastKey指向的那条数据删除，当然可以改进上面的算法，一次删除多条数据，提高性能。</p>
+
+<p>这个算法是可行的，但是有一个很大的问题，慢！
+试想一下，假如有一千万条数据，每次删除都需要找出访问时间最早的那些数据，这是很耗资源的操作，
+时间复杂度是O（N），跟数据量成正比，数据量越大,性能越低。</p>
+
+<p>按照这个思路的实现代码（非线程安全）：</p>
+
+<p><a href="https://github.com/dongyado/awesome-stuff/blob/master/src/top/shares/funny/lru/LRUCachePool.java">LRUCachePool.java</a></p>
+
+<h3 id="优雅的实现思路">优雅的实现思路</h3>
+
+<p>上文提到的方法，最大的瓶颈就在于遍历淘汰数据，如何优化这个过程？</p>
+
+<p>细想一下，淘汰的数据，是最后访问时间最早的，上文的思路是为每一条记录加一个lastime，是否有更好的方法，
+能够迅速（O(1)复杂度下）找到要淘汰的数据，删除操作也是常量级，性能肯定要高很多。</p>
+
+<p>其实稍微转变一下思路，假如操作的数据在一个链表里面，试想这样一个过程：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>访问一条记录 -&gt; 把链表head 指向当前记录 -&gt; 当前记录中的next指向head之前指向的记录 -&gt; 返回当前数据
+</code></pre></div></div>
+
+<p>每访问一次数据，都把最新的访问的数据放到了链表头部，那链表尾部的数据就是最近没有访问过的数据！！
+当链表满了，从链表尾部开始往前删除指定数目的数据，就能在常数级时间内腾出空间！</p>
+
+<p>当想到的这个思路的时候，第一感觉，太神奇了，第二感觉，领会到数据结构是如何优雅的解决一些看似复杂耗时的问题！</p>
+
+<p>然后看下关键的代码(非线程安全)，首先是记录entry，链表里面的node</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>	<span class="kd">public</span> <span class="kd">class</span> <span class="nc">Entry</span><span class="o">{</span>
+		<span class="kd">public</span> <span class="nc">Entry</span> <span class="n">prev</span><span class="o">;</span> 
+		<span class="kd">public</span> <span class="nc">Entry</span> <span class="n">next</span><span class="o">;</span> 
+		<span class="kd">public</span> <span class="kt">int</span> <span class="n">value</span><span class="o">;</span>  
+		<span class="kd">public</span> <span class="kt">int</span> <span class="n">key</span><span class="o">;</span>
+		
+		<span class="kd">public</span> <span class="nf">Entry</span><span class="o">(</span><span class="kt">int</span> <span class="n">value</span><span class="o">,</span> <span class="kt">int</span> <span class="n">key</span><span class="o">,</span> <span class="nc">Entry</span> <span class="n">prev</span><span class="o">,</span> <span class="nc">Entry</span> <span class="n">next</span><span class="o">){</span>
+			<span class="k">this</span><span class="o">.</span><span class="na">value</span>  <span class="o">=</span> <span class="n">value</span><span class="o">;</span>
+			<span class="k">this</span><span class="o">.</span><span class="na">key</span> 	<span class="o">=</span> <span class="n">key</span><span class="o">;</span>
+			<span class="k">this</span><span class="o">.</span><span class="na">prev</span>   <span class="o">=</span> <span class="n">prev</span><span class="o">;</span>
+			<span class="k">this</span><span class="o">.</span><span class="na">next</span>   <span class="o">=</span> <span class="n">next</span><span class="o">;</span>
+		<span class="o">}</span>
+	<span class="o">}</span>
+
+</code></pre></div></div>
+
+<p>淘汰算法：</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="c1">// invalid the least used entity</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">lru</span><span class="o">(){</span>
+    	<span class="c1">// here is a way to improve performance, </span>
+    	<span class="c1">// if we remove last 10% entries, then this function may called less.</span>
+    	
+    	<span class="c1">// remove the last one</span>
+    	<span class="nc">Entry</span> <span class="n">entry</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">tail</span><span class="o">.</span><span class="na">prev</span><span class="o">;</span>
+    	
+    	<span class="k">this</span><span class="o">.</span><span class="na">tail</span><span class="o">.</span><span class="na">prev</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="na">prev</span><span class="o">;</span>
+    	<span class="n">entry</span><span class="o">.</span><span class="na">prev</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">tail</span><span class="o">;</span>
+    	<span class="n">map</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">entry</span><span class="o">.</span><span class="na">key</span><span class="o">);</span>
+    	<span class="k">this</span><span class="o">.</span><span class="na">length</span><span class="o">--;</span>
+    <span class="o">}</span>
+</code></pre></div></div>
+
+<p>这里只实现的了一次淘汰最后一条记录，当链表满的时候，每插入一条数据，都会调用这个方法删除最后的数据，
+性能一般，假如一次删除链表的1%,或者固定数目的多条数据，就能很明显的减少lru方法调用！</p>
+
+<p>当然一次具体淘汰多少数据需要根据具体使用场景来确定，删除太多，可能会引起缓存命中率降低，太少，淘汰操作调用过多，很难给出个经验值。</p>
+
+<p>完整代码：
+<a href="https://github.com/dongyado/awesome-stuff/blob/master/src/top/shares/funny/lru/LRUCache.java">LRUCache.java</a></p>
+
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2016-04-23
+     • Category: 
+        
+        <a href="/categories//#algorithm-ref" >Algorithm</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#lru-ref" >Lru</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

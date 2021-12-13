@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MacOS 编译最新版 ffmpeg (4.2.1) 动态库</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/ffmpeg/video/audio%20tech/2020/05/11/compile-ffmpeg-dynamic-libary-on-macos/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/ffmpeg/video/audio%20tech/2020/05/11/compile-ffmpeg-dynamic-libary-on-macos/">MacOS 编译最新版 ffmpeg (4.2.1) 动态库</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		<p>在 macOS 下编译相对于 linux 要简单一些。由于在 macOS 下一般是开发使用，所以在编译之前使用 homebrew 安装相关依赖即可。</p>
+
+<h3 id="安装依赖">安装依赖</h3>
+<ul>
+  <li>
+    <p>automake 1.16.2</p>
+
+    <p>brew install automake</p>
+  </li>
+  <li>
+    <p>pkg-config 0.29.2</p>
+
+    <p>brew install pkg-config</p>
+  </li>
+  <li>
+    <p>fdk-aac 2.0.1</p>
+
+    <p>brew install fdk-aac</p>
+  </li>
+  <li>
+    <p>lame 3.100</p>
+
+    <p>brew install lame</p>
+  </li>
+  <li>
+    <p>libvorbis 1.3.6</p>
+
+    <p>brew install libvorbis</p>
+  </li>
+  <li>
+    <p>libopus 1.3.1</p>
+
+    <p>brew install opus</p>
+  </li>
+  <li>
+    <p>libbluray 1.1.1</p>
+
+    <p>brew install libbluray</p>
+  </li>
+  <li>
+    <p>libvpx 1.8.2</p>
+
+    <p>brew install libvpx</p>
+  </li>
+  <li>
+    <p>libx265 3.3</p>
+
+    <p>brew install x265</p>
+  </li>
+  <li>
+    <p>libx264 r2917</p>
+
+    <p>brew install x264</p>
+  </li>
+  <li>
+    <p>libxvid 1.3.5</p>
+
+    <p>brew install xvid</p>
+  </li>
+  <li>
+    <p>sdl2   2.0.9</p>
+
+    <p>brew install sdl2</p>
+  </li>
+</ul>
+
+<h3 id="2-编译-ffmpeg">2. 编译 ffmpeg</h3>
+
+<ul>
+  <li>
+    <p>下载</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  wget http://ffmpeg.org/releases/ffmpeg-4.2.1.tar.gz
+  tar -xzvf ffmpeg-4.2.1.tar.gz
+  cd ffmpeg-4.2.1
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>执行 ./configure 检查依赖，出现 not found 请检查，依赖库是否有安装成功</p>
+
+    <p>以下 enable 的选项是 ve SDK 所需的，其他选项可自行选择添加</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  ./configure  \
+  --prefix=/usr/local \
+  --enable-shared \
+  --enable-pic \
+  --enable-gpl \
+  --enable-nonfree \
+  --enable-libmp3lame \
+  --enable-libfdk_aac \
+  --enable-libvorbis \
+  --enable-libopus \
+  --enable-libbluray \
+  --enable-libvpx \
+  --enable-libx265 \
+  --enable-libx264 \
+  --enable-libxvid \
+  --enable-lzma \
+  --enable-opencl \
+  --enable-audiotoolbox \
+  --enable-videotoolbox \
+  --enable-sdl2 \
+  --enable-pthreads \
+  --enable-x86asm \
+  --enable-postproc \
+  --disable-securetransport \
+  --disable-libjack \
+  --disable-libopencore-amrnb \
+  --disable-libopencore-amrwb \
+  --disable-libxcb \
+  --disable-libxcb-shm \
+  --disable-libxcb-xfixes \
+  --disable-indevs \
+  --disable-outdevs 
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>编译安装</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  make -j8 &amp;&amp; make install
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<hr />
+<h3 id="ffmpeg-非必须选项-按需选择">ffmpeg 非必须选项, 按需选择</h3>
+
+<ul>
+  <li>
+    <p>libmodplug 0.8.9.0</p>
+
+    <p>brew install libmodplug</p>
+  </li>
+  <li>
+    <p>libopenjpeg 2.3.1</p>
+
+    <p>brew install openjpeg</p>
+  </li>
+  <li>
+    <p>libsoxr 0.1.3</p>
+
+    <p>brew install libsoxr</p>
+  </li>
+  <li>
+    <p>libspeex  1.2.0</p>
+
+    <p>brew install speex</p>
+  </li>
+  <li>
+    <p>gnutls 3.6.8</p>
+
+    <p>brew install gnutls</p>
+  </li>
+</ul>
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2020-05-11
+     • Category: 
+        
+        <a href="/categories//#ffmpeg-ref" >Ffmpeg</a>
+        
+        <a href="/categories//#video/audio tech-ref" >Video/audio tech</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#macos-ref" >Macos</a>
+        
+            <a href="/tags//#ffmpeg-ref" >Ffmpeg</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

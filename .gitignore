@@ -1,5 +1,5 @@
-_site
 .sass-cache
 *~
 *.swp
 .idea
+.jekyll-cache/

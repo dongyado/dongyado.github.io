@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>几款好用的 vim 插件和使用 vundle 安装 vim 插件</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/tool/2017/07/26/vim-plugins-and-vimrc/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/tool/2017/07/26/vim-plugins-and-vimrc/">几款好用的 vim 插件和使用 vundle 安装 vim 插件</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		<p>vim 作为一个有历史的编辑器，经过了几十年的洗礼，依然是相当一部分程序员最喜欢的编辑器。
+这和它的高效便捷是有很大的关系，如何在你熟悉vim之后，你开始觉得 vim 不是很方便高效，
+这时你可以使用数量众多优质的插件打造出一个的更高效的编辑器。</p>
+
+<p>vim 的插件丰富多彩，质量也很高，下面推荐个人觉得不错的几款插件。</p>
+
+<h3 id="nerdtree">nerdtree</h3>
+
+<p>查看当前目录下的目录文件树，可以很方便的找到对应的文件并进行切换编辑。</p>
+
+<p>项目地址：
+https://github.com/scrooloose/nerdtree</p>
+
+<h3 id="nerdcommenter">nerdcommenter</h3>
+
+<p>快速注释和删除注释，支持各种注释方法，比如 /* */ 和 //， 支持块级注释，如果觉得 vim 下的多行注释很麻烦，这就是你要
+找的注释插件。</p>
+
+<p>项目地址:
+https://github.com/scrooloose/nerdtree</p>
+
+<h3 id="vim-colors-solarized">vim-colors-solarized</h3>
+
+<p>vim 的 solarized 主题， 这个就不用多介绍了。</p>
+
+<p>项目地址:
+https://github.com/altercation/vim-colors-solarized</p>
+
+<h3 id="ctrlp">ctrlp</h3>
+
+<p>模糊文件搜索，包括搜索最近文件和搜索当前目录下和子目录下的所有文件，使用频率比较高的插件。</p>
+
+<p>项目地址:
+https://github.com/kien/ctrlp.vim</p>
+
+<h3 id="youcompleteme">YouCompleteMe</h3>
+
+<p>很强大的自动补全引擎，支持的语言包括 C-family, C#, Go, JavaScript, Python, Rust, TypeScript , 当然也可以支持其他语言。
+功能强大，比较重量级，安装起来也比较麻烦。</p>
+
+<p>项目和安装参见：</p>
+
+<p>https://github.com/Valloric/YouCompleteMe</p>
+
+<h3 id="vundle">vundle</h3>
+
+<p>vim 的插件管理器，使用这个插件可以很方便的安装和卸载插件。在你决定使用 vim 的插件的时候，先手动安装 vundle, 再使用
+vundle 安装其他插件，会帮你节省不少时间。</p>
+
+<p>项目和安装方法参见：
+https://github.com/VundleVim/Vundle.vim</p>
+
+<h2 id="使用-vundle-安装插件">使用 vundle 安装插件</h2>
+
+<p>使用下面的命令安装 vundle:</p>
+
+<p>git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim</p>
+
+<p>然后编辑 .vimrc, 加入 vundle 的配置信息，并加入要安装的插件，再次启动 vim, 
+执行 :PluginInstall 即可完成安装。</p>
+
+<p>参见文档： 
+https://github.com/VundleVim/Vundle.vim/blob/master/README_ZH_CN.md</p>
+
+<p>个人使用的 .vimrc 文件如下:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>" 
+" vim settings 
+"
+" ----------------------------------------------------
+" vim plugin manager 
+" 
+" use command bellow install vundle for vim:
+"   git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
+"
+set nocompatible
+filetype off
+set rtp+=~/.vim/bundle/Vundle.vim
+call vundle#begin()
+
+" add your plugin here
+
+Plugin 'VundleVim/Vundle.vim'               " required
+Plugin 'scrooloose/nerdtree'                " file/directory treee
+Plugin 'scrooloose/nerdcommenter'           " code commenter
+Plugin 'kien/ctrlp.vim'                     " Fuzzy file, buffer, mru, tag, etc finder
+Plugin 'altercation/vim-colors-solarized'   " solarized theme
+
+call vundle#end()            " required
+filetype plugin indent on    " required 
+
+
+" ----------------------------------------------------
+"  basic settings
+"
+set nu
+syntax enable
+syntax on
+" let mapleader=','
+" let g:mapleader=','
+
+" theme 
+set background=dark             " dark | light
+colorscheme solarized           " use solarized theme
+let g:solarized_termcolors=256  " if you are use terminal
+
+" encoding, autoindent
+set autoindent
+set encoding=utf-8
+set fileencodings=utf-8
+set fileencoding=utf-8
+set fileformats=unix,dos
+set ts=4
+
+" replace tab with 4 whitespace
+set shiftwidth=4
+set expandtab
+set pastetoggle=&lt;F3&gt;
+
+" nerd tree toggle
+map &lt;silent&gt;,, :NERDTreeToggle&lt;CR&gt;
+" map &lt;silent&gt;&lt;C-c&gt; :close&lt;CR&gt;
+
+" nerd commenter
+let g:NERDSpaceDelims=1
+map cc          &lt;plug&gt;NERDCommenterComment&lt;CR&gt;
+map cu          &lt;plug&gt;NERDCommenterUncomment&lt;CR&gt;
+map cs          &lt;plug&gt;NERDCommenterSexy&lt;CR&gt;
+map ci          &lt;plug&gt;NERDCommenterInvert&lt;CR&gt;
+map cy          &lt;plug&gt;NERDCommenterYank&lt;CR&gt;
+map ce          &lt;plug&gt;NERDCommenterToEOL&lt;CR&gt;
+map c&lt;space&gt;    &lt;plug&gt;NERDCommenterToggle&lt;CR&gt;
+
+</code></pre></div></div>
+
+<p>暂时就更新这几款插件，后面发现好用的插件会持续更新。</p>
+
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2017-07-26
+     • Category: 
+        
+        <a href="/categories//#tool-ref" >Tool</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#linux-ref" >Linux</a>
+        
+            <a href="/tags//#vim-ref" >Vim</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

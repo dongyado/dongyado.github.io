@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Zabbix使用外部smtp服务器发送告警邮件</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/linux/2016/03/15/smtp-mail-service-for-zabbix/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/linux/2016/03/15/smtp-mail-service-for-zabbix/">Zabbix使用外部smtp服务器发送告警邮件</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		<p>使用sendmail发送报警邮件很麻烦，在服务器上装一个sendmail完全没有必要，所以采用外部smtp邮件服务器来发送报警邮件。
+试过QQ邮箱，应该是做了限制，无法发送成功，然后再试了163邮箱，能够正常发送。</p>
+
+<h3 id="安装heirloom-mailx">安装heirloom-mailx</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sudo apt-get install heirloom-mailx
+</code></pre></div></div>
+
+<h3 id="编辑nailrc配置">编辑nail.rc配置</h3>
+<p>sudo nano /etc/nail.rc 添加网易163邮箱开放的需要认证的smtp服务器:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>set from=USER@163.com
+set smtp=smtp.163.com
+set smtp-auth-user=USER
+set smtp-auth-password=PASSWORD
+set smtp-auth=login
+</code></pre></div></div>
+
+<h3 id="发送脚本-mailsh">发送脚本 mail.sh</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#!/bin/bash
+
+to=$1
+subject=$2
+body=$3
+
+cat &lt;&lt;EOF | heirloom-mailx -s "$subject" "$to"
+$body
+EOF
+</code></pre></div></div>
+
+<h3 id="配置zabbix的媒体类型">配置zabbix的媒体类型：</h3>
+<p>To configure custom alertscripts as the media type:</p>
+
+<p>Go to Administration→Media types</p>
+
+<p>Click on Create media typetype: script</p>
+
+<p>script name: main.sh</p>
+
+<p>参数填三个</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{ALERT.SENDTO}
+{ALERT.SUBJECT}
+{ALERT.MESSAGE}
+</code></pre></div></div>
+
+<h3 id="给用户绑定媒体">给用户绑定媒体</h3>
+<p>Go to Administration→Users</p>
+
+<p>Click on Admin or other user -&gt; media -&gt; click Add to add a media for the user</p>
+
+<p>Type： 选 email
+send to： 填 the email of the user</p>
+
+<h3 id="配置action">配置action</h3>
+<p>Configuration-&gt;Actions 
+创建需要的action</p>
+
+<h3 id="关于邮件正文变成附件以及中文乱码的问题">关于邮件正文变成附件以及中文乱码的问题</h3>
+<p>经查是因为邮件正文包含\r\n，导致邮件出错，所以需要先将正文使用dos2unix处理一下：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#!/bin/sh
+# 解决中文乱码问题
+export LANG=zh_CN.UTF-8
+to=$1
+subject=$2
+body=$3
+
+# 方法1, 创建一个临时文件
+FILE=/tmp/mailtmp.txt
+if [ ! -f $FILE ];then 
+touch $FILE
+chown zabbix.zabbix $FILE
+fi
+
+echo "$body" &gt; $FILE
+dos2unix -k $FILE
+heirloom-mailx -s "$subject" $to &lt;$FILE
+
+# 方法2, 管道输出
+echo "$body" | dos2unix -k | heirloom-mailx -s "$subject" "$to"
+</code></pre></div></div>
+
+<p>处理完最后两个问题后，系统邮件发送已经正常，就是发送太频繁的时候，偶尔会被QQ邮箱拦截，不过完全可以满足日常监控了。</p>
+
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2016-03-15
+     • Category: 
+        
+        <a href="/categories//#linux-ref" >Linux</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#zabbix-ref" >Zabbix</a>
+        
+            <a href="/tags//#heirloom-mailx-ref" >Heirloom-mailx</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

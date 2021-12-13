@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Zabbix安装与配置（ubuntu 14.04）</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/linux/2016/03/13/install-zabbix-on-ubuntu/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/linux/2016/03/13/install-zabbix-on-ubuntu/">Zabbix安装与配置（ubuntu 14.04）</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		<p>之前只配过nagios，最近觉得有必要试用一下其它的监控平台，然后再选一个合适的放生产环境中使用，然后看到zabbix不错，就适用了一下，发现安装简单，功能也简单易用，瞬起好感，遂把安装过程记下来，以后需要的时候查看。</p>
+
+<h3 id="一-服务端">一 服务端</h3>
+<p>Zabbix 3.0 for Ubuntu 14.04 LTS:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># wget http://repo.zabbix.com/zabbix/3.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_3.0-1+trusty_all.deb
+# dpkg -i zabbix-release_3.0-1+trusty_all.deb
+# apt-get update
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>安装服务端（使用mysql做数据存储）和web服务</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  # apt-get install zabbix-server-mysql zabbix-frontend-php
+</code></pre></div>    </div>
+
+    <p>在未安装apache的情况下，会遇到这个错误：</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  /var/lib/dpkg/info/zabbix-frontend-php.postinst: 24: /var/lib/dpkg/info/zabbix-frontend-php.postinst: /usr/sbin/a2enconf: not found
+  dpkg: error processing package zabbix-frontend-php (--configure):
+   subprocess installed post-installation script returned error exit status 127
+  Processing triggers for libc-bin (2.19-0ubuntu6) ...
+  Processing triggers for ureadahead (0.100.0-16) ...
+  Errors were encountered while processing:
+   zabbix-frontend-php
+  E: Sub-process /usr/bin/dpkg returned an error code (1)
+</code></pre></div>    </div>
+
+    <p>因为缺失 apache的一个配置文件
+  /usr/sbin/a2enconf: not found
+  zabbix-frontend-php配置失败，因为我使用的是nginx和php5-fpm，下一步照着安装产生的配置文件修改一下即可。</p>
+
+    <p>1). 查看生成的 apache 主机文件</p>
+
+    <p>zabbix-frontend-php安装产生的apache虚拟主机配置文件在/etc/apache2/conf-available里面，然后链接到了/etc/zabbix/apache.conf。
+  该配置文件指定了 frontend-php 的web文件在 /usr/share/zabbix</p>
+
+    <p>2). 拷贝web文件</p>
+
+    <p>为了安全和方便管理，最好把 zabbix-frontend-php的web文件（/usr/share/zabbix），拷贝到nginx的web目录下。</p>
+
+    <p>3). 配置主机文件</p>
+
+    <p>3.0版本:</p>
+
+    <p>我们需要根据/etc/zabbix/apache.conf, 写一个nginx 的主机文件，
+  再拷贝到/etc/nginx/site-available，指定网站根目录，禁止访问一些目录，配置好后， reload nginx就可以使用了。</p>
+
+    <p>2.0版本：
+  安装时，已经默认拷贝了nginx的配置文件，一般在：
+  /usr/share/doc/zabbix-frontend-php/examples/nginx.conf
+  可以根据这个写个虚拟主机文件。</p>
+  </li>
+  <li>
+    <p>初始化数据库：</p>
+
+    <p>用终端连接mysql:</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  mysql -uroot -p
+</code></pre></div>    </div>
+
+    <p>1). 创建数据库：</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  mysql&gt; create database zabbix character set utf8 collate utf8_general_ci; 
+  mysql&gt; insert into mysql.user(Host,User,Password) values('%','zabbix',password('zabbix'));
+  mysql&gt; flush privileges;
+  mysql&gt; grant all privileges on zabbix.* to zabbix@'%' identified by 'zabbix';
+  mysql&gt; flush privileges;
+</code></pre></div>    </div>
+
+    <p>2). 初始化数据库：</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  # cd /usr/share/doc/zabbix-server-mysql
+  # zcat create.sql.gz | mysql -uroot -p zabbix
+</code></pre></div>    </div>
+
+    <p>3). 编辑zabbix server 的数据库配置</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  # vi /etc/zabbix/zabbix_server.conf
+  DBHost=localhost
+  DBName=zabbix
+  DBUser=zabbix
+  DBPassword=zabbix
+</code></pre></div>    </div>
+
+    <p>4). 启动服务</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  # service zabbix-server start
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>配置web服务最低的环境</p>
+
+    <p>按照下面的提示(在/etc/zabbix/apache.conf里面)，修改fpm的php.ini，以下值都是最低要求，可以按需求适度加大</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  max_execution_time= 300
+  memory_limit= 128M
+  post_max_size = 16M
+  upload_max_filesize = 2M
+  max_input_time = 300
+  date.timezone = Asia/Shanghai   修改完成后，reload php5-fpm即可，然后就可以使用绑定好的域名访问了。
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>打开配置好的web服务域名，按照提示一步一步填写，然后就可以使用Admin和zabbix登录后台了。</p>
+  </li>
+</ul>
+
+<h3 id="二-客户端">二 客户端</h3>
+<p>使用下面的命令安装</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># apt-get install zabbix-agent
+</code></pre></div></div>
+
+<p>编辑 vim /etc/zabbix/zabbix_agentd.conf</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Server=127.0.0.1 # 监控服务器的IP
+ListenPort=10050 # 监听的端口
+StartAgents=1    # 启动的客户端进程
+ServerActive=127.0.0.1：10051 # 主动模式下的监控服务器IP（主动模式必须）
+Hostname=Zabbix server # 监控服务器的名称，大小写敏感（主动模式必须）
+</code></pre></div></div>
+
+<p>以上信息必须正确（省掉了用户密码）， 监控服务器才能从客户端获取到数据。</p>
+
+<p>主动模式 表示客户端提交数据到监控主服务器
+被动模式 表示监控主服务器定时去客户端取数据</p>
+
+<h3 id="三-结语">三 结语</h3>
+<p>安装配置下来，总体来说要比nagios简单易用很多，后面还可以结合salt进行自动化运维，是一个很不错的选择。</p>
+
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2016-03-13
+     • Category: 
+        
+        <a href="/categories//#linux-ref" >Linux</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#zabbix-ref" >Zabbix</a>
+        
+            <a href="/tags//#linux-ref" >Linux</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Linux localtime/localtime_r 导致 fork 子进程死锁卡死问题的研究</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/linux/2019/10/14/linux-fork-child-process-got-deadlock-in-localtime/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/linux/2019/10/14/linux-fork-child-process-got-deadlock-in-localtime/">Linux localtime/localtime_r 导致 fork 子进程死锁卡死问题的研究</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		<h3 id="问题背景">问题背景</h3>
+
+<p>ve 短视频渲染服务程序基于 opengl 和 c/c++ 开发， 服务器渲染现阶段只支持 linux，渲染流程是： 父进程下载数据和素材，再 fork 一个渲染子进程进行渲染。</p>
+
+<p>近期发现生产环境中，极小概率下，会出现渲染子进程假死、卡住以及无任何日志输出的现象。</p>
+
+<p>这个问题在现有生产流程下很难重现，最初采用的解决方法是在父进程中检测渲染进程启动失败时，发送信号 Kill 掉后重试任务。</p>
+
+<p>最近特意抽出时间仔细分析并解决了这个问题，觉得很有意思，记录下来。</p>
+
+<h3 id="问题查找">问题查找</h3>
+
+<h4 id="重现问题">重现问题</h4>
+
+<p>渲染服务由于需要预先下载素材和准备数据，很难达到同时启动多个任务的情况，所以特意重写了多线程支持本地多任务的测试程序。</p>
+
+<p>基本流程就是同一时间启动多个线程，每个线程 fork 一个子进程进行渲染，然后等待所有线程完成。</p>
+
+<p>经过多次测试重现假死的概率很高。</p>
+
+<h4 id="定位问题">定位问题</h4>
+
+<p>稳定重现问题是定位问题的基本条件，在稍微修改测试程序后，使用 debug 编译，正常启动后就可以使用 gdb 调试，找到进程具体卡死的位置，步骤如下：</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>slayer@slayer-B250M-D3H:~<span class="nv">$ </span><span class="nb">sudo </span>gdb <span class="nt">-p</span> 12680
+GNU gdb <span class="o">(</span>Ubuntu 7.11.1-0ubuntu1~16.5<span class="o">)</span> 7.11.1
+Copyright <span class="o">(</span>C<span class="o">)</span> 2016 Free Software Foundation, Inc.
+...
+<span class="o">[</span>Thread debugging using libthread_db enabled]
+...
+<span class="o">(</span>gdb<span class="o">)</span> info threads
+  Id   Target Id         Frame 
+<span class="k">*</span> 1    Thread 0x7ff6287a6700 <span class="o">(</span>LWP 12680<span class="o">)</span> <span class="s2">"SXVideoEngineDe"</span> __lll_lock_wait_private <span class="o">()</span>
+    at ../sysdeps/unix/sysv/linux/x86_64/lowlevellock.S:95
+<span class="o">(</span>gdb<span class="o">)</span> thread 1
+<span class="o">[</span>Switching to thread 1 <span class="o">(</span>Thread 0x7ff6287a6700 <span class="o">(</span>LWP 12680<span class="o">))]</span>
+<span class="c">#0  __lll_lock_wait_private () at ../sysdeps/unix/sysv/linux/x86_64/lowlevellock.S:95</span>
+95	<span class="k">in</span> ../sysdeps/unix/sysv/linux/x86_64/lowlevellock.S
+<span class="o">(</span>gdb<span class="o">)</span> where
+<span class="c">#0  __lll_lock_wait_private () at ../sysdeps/unix/sysv/linux/x86_64/lowlevellock.S:95</span>
+<span class="c">#1  0x00007ff6421bfc76 in __tz_convert (timer=0x7ff6424c8ac0 &lt;tzset_lock&gt;, use_localtime=1, tp=0x7ff6287a39d0)</span>
+    at tzset.c:616
+<span class="c">#2  0x00000000013b2c01 in el::base::utils::DateTime::buildTimeInfo (currTime=0x7ff6287a39a0, timeInfo=0x7ff6287a39d0)</span>
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/easylogging++.cc:1232
+<span class="c">#3  0x00000000013b2751 in el::base::utils::DateTime::timevalToString[abi:cxx11](timeval, char const*, el::base::SubsecondPrecision const*) (tval=..., format=0x37bdbb0 "%Y-%M-%d %H:%m:%s,%g", ssPrec=0x37f2cdc)</span>
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/easylogging++.cc:1190
+<span class="c">#4  0x00000000013b26da in el::base::utils::DateTime::getDateTime[abi:cxx11](char const*, el::base::SubsecondPrecision const*) (format=0x37bdbb0 "%Y-%M-%d %H:%m:%s,%g", ssPrec=0x37f2cdc)</span>
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/easylogging++.cc:1184
+<span class="c">#5  0x00000000013ba36c in el::base::DefaultLogBuilder::build[abi:cxx11](el::LogMessage const*, bool) const (</span>
+    <span class="nv">this</span><span class="o">=</span>0x37b9ff0, <span class="nv">logMessage</span><span class="o">=</span>0x7ff6287a4030, <span class="nv">appendNewLine</span><span class="o">=</span><span class="nb">true</span><span class="o">)</span>
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/easylogging++.cc:2412
+<span class="c">#6  0x00000000013b9d94 in el::base::DefaultLogDispatchCallback::handle (this=0x37f8b20, data=0x7ff6287a3ee0)</span>
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/easylogging++.cc:2212
+<span class="c">#7  0x00000000013bb2cf in el::base::LogDispatcher::dispatch (this=0x7ff6287a3f70)</span>
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/easylogging++.cc:2499
+<span class="c">#8  0x00000000013bc0b5 in el::base::Writer::triggerDispatch (this=0x7ff6287a42e0)</span>
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/easylogging++.cc:2632
+<span class="c">#9  0x00000000013bbdf8 in el::base::Writer::processDispatch (this=0x7ff6287a42e0)</span>
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/easylogging++.cc:2613
+<span class="c">#10 0x00000000004392b8 in el::base::Writer::~Writer (this=0x7ff6287a42e0, __in_chrg=&lt;optimized out&gt;)</span>
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/easylogging++.h:3213
+<span class="c">#11 0x00000000013aa518 in VEPrintLog (level=3, str=0x1ab9448 "Child process ve_render_process_start() : %s", </span>
+    <span class="nv">args</span><span class="o">=</span>0x7ff6287a53a0<span class="o">)</span> at /home/slayer/workspace/SXVideoEngine-Core/Render/log/corelog.cpp:135
+<span class="c">#12 0x00000000013aa0ad in VELogInfo (str=0x1ab9448 "Child process ve_render_process_start() : %s")</span>
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/corelog.cpp:90
+<span class="c">#13 0x000000000180b09d in ve_render_process_start (id=0x7ff6287a5740, </span>
+    <span class="nv">handler</span><span class="o">=</span>0x43abb5 &lt;MultiThreadVideoTest::Handler<span class="o">(</span>unsigned long<span class="k">*</span>, char const<span class="k">*</span><span class="o">)&gt;)</span>
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/server/RenderProcess.cpp:597
+<span class="c">#14 0x000000000043acea in MultiThreadVideoTest::RenderThread (context=0x7ffe95b37320)</span>
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/SXVideoEngineDemo.cpp:342
+<span class="c">#15 0x00007ff6470e46ba in start_thread (arg=0x7ff6287a6700) at pthread_create.c:333</span>
+<span class="c">#16 0x00007ff64220941d in clone () at ../sysdeps/unix/sysv/linux/x86_64/clone.S:109</span>
+<span class="o">(</span>gdb<span class="o">)</span> 
+
+</code></pre></div></div>
+
+<p>确定死锁卡死的点为：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#0  __lll_lock_wait_private () at ../sysdeps/unix/sysv/linux/x86_64/lowlevellock.S:95
+#1  0x00007ff6421bfc76 in __tz_convert (timer=0x7ff6424c8ac0 &lt;tzset_lock&gt;, use_localtime=1, tp=0x7ff6287a39d0)
+    at tzset.c:616
+#2  0x00000000013b2c01 in el::base::utils::DateTime::buildTimeInfo (currTime=0x7ff6287a39a0, timeInfo=0x7ff6287a39d0)
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/easylogging++.cc:1232
+</code></pre></div></div>
+
+<p>查看源码，确定 easylogging 在打印日志需要格式化当前时间，调用了 localtime_r 的方法， 查看 localtime.c 源码，</p>
+
+<p>函数调用栈为： localtime_r -&gt; __localtime_r -&gt; __localtime64_r -&gt; __tz_convert</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">struct</span> <span class="n">tm</span> <span class="o">*</span>
+<span class="nf">__localtime64_r</span> <span class="p">(</span><span class="k">const</span> <span class="n">__time64_t</span> <span class="o">*</span><span class="n">t</span><span class="p">,</span> <span class="k">struct</span> <span class="n">tm</span> <span class="o">*</span><span class="n">tp</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">__tz_convert</span> <span class="p">(</span><span class="o">*</span><span class="n">t</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">tp</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="cm">/* Provide a 32-bit variant if needed.  */</span>
+<span class="cp">#if __TIMESIZE != 64
+</span><span class="k">struct</span> <span class="n">tm</span> <span class="o">*</span>
+<span class="nf">__localtime_r</span> <span class="p">(</span><span class="k">const</span> <span class="kt">time_t</span> <span class="o">*</span><span class="n">t</span><span class="p">,</span> <span class="k">struct</span> <span class="n">tm</span> <span class="o">*</span><span class="n">tp</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">__time64_t</span> <span class="n">t64</span> <span class="o">=</span> <span class="o">*</span><span class="n">t</span><span class="p">;</span>
+  <span class="k">return</span> <span class="n">__localtime64_r</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">t64</span><span class="p">,</span> <span class="n">tp</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="n">libc_hidden_def</span> <span class="p">(</span><span class="n">__localtime64_r</span><span class="p">)</span>
+<span class="cp">#endif
+</span><span class="n">weak_alias</span> <span class="p">(</span><span class="n">__localtime_r</span><span class="p">,</span> <span class="n">localtime_r</span><span class="p">)</span>
+
+</code></pre></div></div>
+
+<p>继续查看 __tz_convert 的源码， 在 tzset.c 中, 可以看到调用了    <code class="language-plaintext highlighter-rouge">__libc_lock_lock (tzset_lock);</code> 加锁，进程就是死锁在这里。</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cm">/* Return the `struct tm' representation of TIMER in the local timezone.
+   Use local time if USE_LOCALTIME is nonzero, UTC otherwise.  */</span>
+<span class="k">struct</span> <span class="n">tm</span> <span class="o">*</span>
+<span class="nf">__tz_convert</span> <span class="p">(</span><span class="n">__time64_t</span> <span class="n">timer</span><span class="p">,</span> <span class="kt">int</span> <span class="n">use_localtime</span><span class="p">,</span> <span class="k">struct</span> <span class="n">tm</span> <span class="o">*</span><span class="n">tp</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">long</span> <span class="kt">int</span> <span class="n">leap_correction</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">leap_extra_secs</span><span class="p">;</span>
+  <span class="n">__libc_lock_lock</span> <span class="p">(</span><span class="n">tzset_lock</span><span class="p">);</span>
+  <span class="cm">/* Update internal database according to current TZ setting.
+     POSIX.1 8.3.7.2 says that localtime_r is not required to set tzname.
+     This is a good idea since this allows at least a bit more parallelism.  */</span>
+  <span class="n">tzset_internal</span> <span class="p">(</span><span class="n">tp</span> <span class="o">==</span> <span class="o">&amp;</span><span class="n">_tmbuf</span> <span class="o">&amp;&amp;</span> <span class="n">use_localtime</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">__use_tzfile</span><span class="p">)</span>
+    <span class="n">__tzfile_compute</span> <span class="p">(</span><span class="n">timer</span><span class="p">,</span> <span class="n">use_localtime</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">leap_correction</span><span class="p">,</span>
+                      <span class="o">&amp;</span><span class="n">leap_extra_secs</span><span class="p">,</span> <span class="n">tp</span><span class="p">);</span>
+  <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="o">!</span> <span class="n">__offtime</span> <span class="p">(</span><span class="n">timer</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tp</span><span class="p">))</span>
+        <span class="n">tp</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+      <span class="k">else</span>
+        <span class="n">__tz_compute</span> <span class="p">(</span><span class="n">timer</span><span class="p">,</span> <span class="n">tp</span><span class="p">,</span> <span class="n">use_localtime</span><span class="p">);</span>
+      <span class="n">leap_correction</span> <span class="o">=</span> <span class="mi">0L</span><span class="p">;</span>
+      <span class="n">leap_extra_secs</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="n">__libc_lock_unlock</span> <span class="p">(</span><span class="n">tzset_lock</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">tp</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="o">!</span> <span class="n">use_localtime</span><span class="p">)</span>
+        <span class="p">{</span>
+          <span class="n">tp</span><span class="o">-&gt;</span><span class="n">tm_isdst</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+          <span class="n">tp</span><span class="o">-&gt;</span><span class="n">tm_zone</span> <span class="o">=</span> <span class="s">"GMT"</span><span class="p">;</span>
+          <span class="n">tp</span><span class="o">-&gt;</span><span class="n">tm_gmtoff</span> <span class="o">=</span> <span class="mi">0L</span><span class="p">;</span>
+        <span class="p">}</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">__offtime</span> <span class="p">(</span><span class="n">timer</span><span class="p">,</span> <span class="n">tp</span><span class="o">-&gt;</span><span class="n">tm_gmtoff</span> <span class="o">-</span> <span class="n">leap_correction</span><span class="p">,</span> <span class="n">tp</span><span class="p">))</span>
+        <span class="n">tp</span><span class="o">-&gt;</span><span class="n">tm_sec</span> <span class="o">+=</span> <span class="n">leap_extra_secs</span><span class="p">;</span>
+      <span class="k">else</span>
+        <span class="n">tp</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="k">return</span> <span class="n">tp</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">__libc_lock_lock (tzset_lock);</code> 执行了加锁操作， tzset_lock 是通过下面的宏定义的</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">__libc_lock_define_initialized</span> <span class="p">(</span><span class="k">static</span><span class="p">,</span> <span class="n">tzset_lock</span><span class="p">)</span>
+</code></pre></div></div>
+<p>宏替换后的代码是</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">static</span> <span class="n">__libc_lock_t</span> <span class="n">tzset_lock</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>最终在 libc-lock.h 中找到 __libc_lock_t 的定义</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">typedef</span> <span class="n">pthread_mutex_t</span> <span class="n">__libc_lock_t</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>可以确认这是一把静态共享锁。</p>
+
+<ul>
+  <li>为什么这里需要加锁？</li>
+</ul>
+
+<p>__tz_convert 中计算的时候使用了多个全局变量，比如 _tm_buf, __tz_name, __daylight, __timezone 等全局变量，计算过程中，都有读写，非线程安全。</p>
+
+<ul>
+  <li>为什么会产生死锁？</li>
+</ul>
+
+<p>fork 时，子进程会复制锁和锁的状态，假如复制时，主进程的刚好有个操作进行了加锁操作，此时子进程得到的锁就已经是<strong>上锁</strong>的状态，这时子进程再去加锁，只会永远等待，因为没有任何操作去解锁；主进程中解锁也是解自己的锁，与子进程无关。</p>
+
+<p>这样就得到的死锁的原因和根源，剩下的就是找到最合适的解决方法。</p>
+
+<h3 id="解决方法">解决方法</h3>
+
+<p>办法有很多，最终选择替换 localtime_r 函数，参考了 redis 5.0 实现的 nolocks_localtime 函数，彻底替换了 localtime_r 函数。</p>
+
+<p>参考 https://github.com/antirez/redis/blob/5.0.0/src/localtime.c</p>
+
+<h3 id="总结">总结</h3>
+
+<p>多线程且有锁操作的程序要谨慎使用 fork, 存在父进程和子进程都要使用的锁，复制后都有可能造成子进程死锁。</p>
+
+<p>最终总结一下解决思路：</p>
+
+<ol>
+  <li>避免共享锁的代码</li>
+  <li>在 fork 之后立即调用 execv 方法抛弃父进程的空间数据，启用新的进程内存空间，从根本上独立于父进程，相当重新开了个进程，自然不会有锁的问题</li>
+  <li>使用 pthread_afork 在fork 前释放共享的锁，这个方法使用并不方便，如果引用的库中包含锁，很难对全部的锁进行操作，解锁时也可能导致使用锁的程序状态异常</li>
+</ol>
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2019-10-14
+     • Category: 
+        
+        <a href="/categories//#linux-ref" >Linux</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#process-ref" >Process</a>
+        
+            <a href="/tags//#localtime-ref" >Localtime</a>
+        
+            <a href="/tags//#fork-ref" >Fork</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

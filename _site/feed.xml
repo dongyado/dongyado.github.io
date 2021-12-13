@@ -1,0 +1,1387 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>生命不止，折腾不息</title>
+    <description>生命不止，折腾不息</description>
+    <link>http://localhost:4000/</link>
+    <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
+    <pubDate>Mon, 13 Dec 2021 16:51:03 +0800</pubDate>
+    <lastBuildDate>Mon, 13 Dec 2021 16:51:03 +0800</lastBuildDate>
+    <generator>Jekyll v4.2.1</generator>
+    
+      <item>
+        <title>在 WebAssembly 中实现回调的方式</title>
+        <description>&lt;p&gt;本文将介绍在 C++ 中实现 js 回调的几种方式. 在使用 wasm 的过程中, 避免不了要从 C++ 回调 js 的函数来实现异步交互.&lt;/p&gt;
+
+&lt;p&gt;官网文档 https://emscripten.org/docs/porting/connecting_cpp_and_javascript/Interacting-with-code.html#&lt;/p&gt;
+
+&lt;p&gt;中已经介绍了6种实现回调的方式, 这里介绍几种能解决实际问题的方式&lt;/p&gt;
+
+&lt;hr /&gt;
+&lt;h3 id=&quot;em_asm-相关参数介绍&quot;&gt;EM_ASM 相关参数介绍&lt;/h3&gt;
+
+&lt;p&gt;EM_ASM 函数簇包含&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;EM_ASM
+EM_ASM_INT
+EM_ASM_DOUBLE
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;类似的使用方式 :&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;EM_ASM_({
+            postMessage({cmd: 'callback', text: &quot;callback&quot;, threadId: $2, callId : $0, code : $1})
+        }, callback, code, tid);
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;其中 $0, $1, $2 分别代表 callback, code, tid 的值.&lt;/p&gt;
+
+&lt;p&gt;后面两个函数还可以获取到 js 返回的 int/ double 值. 一般能满足简单的使用.&lt;/p&gt;
+
+&lt;hr /&gt;
+&lt;h3 id=&quot;如何在-worker-中实现回调&quot;&gt;如何在 worker 中实现回调&lt;/h3&gt;
+
+&lt;p&gt;使用 wasm 的时候, 某些任务会被放到 worker 中执行, 执行完成后回调通知结果.&lt;/p&gt;
+
+&lt;p&gt;这个时候要特别注意: worker 和主线程是相互独立的, 并不能像普通的多线程可以共享进程内的数据. 在 worker 中调用 js 回调时, 第一个面临的限制就是 web worker 的限制:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;不能访问 window, document 对象&lt;/li&gt;
+  &lt;li&gt;与主线程通信需要通过 post message 方式&lt;/li&gt;
+  &lt;li&gt;不能访问主进程中的全局变量会对象&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;如果直接在 worker 中直接调用回调, 就只能做一些简单的事情. 为此 emscripten 提供了以下函数:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;MAIN_THREAD_EM_ASM
+MAIN_THREAD_EM_ASM_INT
+MAIN_THREAD_EM_ASM_DOUBLE
+MAIN_THREAD_ASYNC_EM_ASM
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;顾名思义就是在主线程中执行函数. 但是前面 3 个函数不管在哪个线程调用都会会阻塞主线程.&lt;/p&gt;
+
+&lt;p&gt;推荐使用最后一个 MAIN_THREAD_ASYNC_EM_ASM, 区别就是在如果是主线程调用该函数,会被理解执行,如果是在其他线程调用,则会被追加到主线程的任务队列再被执行.&lt;/p&gt;
+
+&lt;p&gt;至于如何实现这个功能了, emscripten 也突破不了这个限制, 也是通过 postMessage 的通信机制实现的.&lt;/p&gt;
+
+&lt;p&gt;在不熟悉 emscripten 的时候我自己模拟了这个过程:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;在主线程注册函数, 保存在一个特定的对象中, 并产生一个 callid&lt;/li&gt;
+  &lt;li&gt;把callid 传到 worker 中,使用上述的 EM_ASM 回调&lt;/li&gt;
+  &lt;li&gt;子线程会把信息 post 到主线程&lt;/li&gt;
+  &lt;li&gt;主线程收到 message 和 callid, 去特定的对象查找到已经注册的回调函数, 执行函数,完成回调&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;如何在回调中传递字符串&quot;&gt;如何在回调中传递字符串&lt;/h3&gt;
+&lt;p&gt;在 emscripten 值的传递, 除了基本类型是通过拷贝的, 字符串和数组,内存都是通过指针地址去传递.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    std::string data = &quot;{\&quot;code\&quot; : 0, \&quot;msg\&quot; : \&quot;/input.mp4\&quot;}&quot;
+    MAIN_THREAD_ASYNC_EM_ASM({
+         var dataStr = UTF8ToString($0);
+         console.log(dataStr)
+    }, data.c_str());
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;在回调函数中,通过 UTF8ToString 函数把传递过去的指针转成 js 的字符串, 这样来达到传递字符串的目的.&lt;/p&gt;
+</description>
+        <pubDate>Sun, 31 Jan 2021 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/webassembly/2021/01/31/implement-callback-in-webassembly/</link>
+        <guid isPermaLink="true">http://localhost:4000/webassembly/2021/01/31/implement-callback-in-webassembly/</guid>
+        
+        <category>webassembly</category>
+        
+        
+        <category>webassembly</category>
+        
+      </item>
+    
+      <item>
+        <title>WebAssembly 在 Web 端视频的应用</title>
+        <description>&lt;p&gt;WebAssembly 从诞生起，赋予了前端更宽阔的应用想象。绘图视频渲染，剪辑，编解码，游戏都有可能基于 WebAssembly 在浏览器端推出相关的产品。&lt;/p&gt;
+
+&lt;h3 id=&quot;什么是-webassembly&quot;&gt;什么是 WebAssembly&lt;/h3&gt;
+
+&lt;p&gt;WebAssembly（wasm） 是一种二进制代码格式, 具有高效，跨平台性，包含这种格式的二进制文件，可以被各个平台的浏览器高效的加载，解析执行。&lt;/p&gt;
+
+&lt;p&gt;只要浏览器支持 wasm， 用户便可以使用 wasm 所提供的功能，也就是说 wasm 的跨平台性其实是基于浏览器的跨平台性。上层用户编译 wasm 时，&lt;br /&gt;
+不需要关注底层架构是什么，只要编译出来正确的二进制文件，就可以在各个支持的浏览器运行。&lt;/p&gt;
+
+&lt;p&gt;wasm 增强了 js 的能力，js 不擅长做的事情，比如绘图，编码，解码，数学计算等，都可以在 wasm 中实现，然后 js 就可以使用wasm所提供的能力。&lt;/p&gt;
+
+&lt;p&gt;现阶段已经有很多 WebAssembly 的应用，比如 ffmpeg 的编解码应用， unity 3d, unreal engine， google earth等都相继支持了 wasm。&lt;/p&gt;
+
+&lt;h3 id=&quot;如何使用&quot;&gt;如何使用&lt;/h3&gt;
+
+&lt;p&gt;WebAssembly 现在支持从 C/C++, go, rust 编译成 wasm 模块。使用 emscripten sdk, 可以从 C/C++ 源码直接编译成 wasm 文件，然后在网页中
+直接加载使用。&lt;/p&gt;
+
+&lt;p&gt;参考 https://emscripten.org/docs/getting_started/Tutorial.html 入门。&lt;br /&gt;
+参考 https://emscripten.org/docs/compiling/Building-Projects.html 编译项目。&lt;/p&gt;
+
+&lt;p&gt;但是如何从网页调用 wasm 的方法。两种方法：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;直接使用 emscripten 提供的底层函数，把wasm 的方法导出到 js 运行环境中。&lt;/li&gt;
+  &lt;li&gt;在底层使用 embinding 直接导出 c/c++ 的函数和类，然后在 js 中调用。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;如果应用在视频剪辑中&quot;&gt;如果应用在视频剪辑中&lt;/h3&gt;
+&lt;p&gt;基于 wasm 提供的能力，ffmpeg 解码， 图片解码， OpenGL, 多线程，视频剪辑应用的结构图如下， 该系列文章，会不定期更新，介绍基于此图的架构和技术原理：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/images/post/wasm.png&quot; alt=&quot;image&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;参考在线演示 demo: http://cloudedit.atvideo.cc&lt;/p&gt;
+
+&lt;h3 id=&quot;wasm-的限制和风险&quot;&gt;wasm 的限制和风险&lt;/h3&gt;
+&lt;p&gt;wasm 的限制与不便&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;运行在一个沙盒中，网页和 js 的限制， wasm 同样会有，比如跨域&lt;/li&gt;
+  &lt;li&gt;不能直接读取用户计算机磁盘上的文件&lt;/li&gt;
+  &lt;li&gt;能使用的最大内存有限制，各个浏览器的限制都不同，一般为 2G&lt;/li&gt;
+  &lt;li&gt;现阶段已经支持了多线程（基于 worker 和 SharedArrayBuffer), 其中 SharedArrayBuffer 在有些浏览器不会默认开启&lt;/li&gt;
+  &lt;li&gt;wasm 中申请的内存也需要手动释放&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;技术本身不会有太多的风险，在于如何去使用。已经出现过基于 wasm 技术开发的挖矿程序，病毒等。&lt;br /&gt;
+由于 wasm 是更低级的二进制格式，网页端在这方面的安全检查和拦截还不成熟。现阶段使用了 wasm 技术的网站可能会有更大的安全风险。&lt;/p&gt;
+
+&lt;p&gt;随着各大浏览器对 wasm 的完善， wasm 能支持的功能会更多。比如 gc, 更好的异常处理,届时能实现更高效和全面的功能。&lt;/p&gt;
+</description>
+        <pubDate>Sun, 29 Nov 2020 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/webassembly/2020/11/29/use-webassembly-render-video/</link>
+        <guid isPermaLink="true">http://localhost:4000/webassembly/2020/11/29/use-webassembly-render-video/</guid>
+        
+        <category>webassembly</category>
+        
+        
+        <category>webassembly</category>
+        
+      </item>
+    
+      <item>
+        <title>Linux 动态库 undefined symbol 原因定位与解决方法</title>
+        <description>&lt;p&gt;在使用动态库开发部署时，遇到最多的问题可能就是 undefined symbol 了，导致这个出现这个问题的原因有多种多样，快速找到原因，采用对应的方法解决是本文写作的目的。&lt;/p&gt;
+
+&lt;h3 id=&quot;可能的原因&quot;&gt;可能的原因&lt;/h3&gt;
+
+&lt;h4 id=&quot;1-依赖库未找到&quot;&gt;1. 依赖库未找到&lt;/h4&gt;
+&lt;p&gt;这是最常见的原因，一般是没有指定查找目录，或者没有安装到系统查找目录里&lt;/p&gt;
+
+&lt;h4 id=&quot;2-链接的依赖库不一致&quot;&gt;2. 链接的依赖库不一致&lt;/h4&gt;
+&lt;p&gt;编译的时候使用了高版本，然后不同机器使用时链接的却是低版本，低版本可能缺失某些 api&lt;/p&gt;
+
+&lt;h4 id=&quot;3-符号被隐藏&quot;&gt;3. 符号被隐藏&lt;/h4&gt;
+&lt;p&gt;如果动态库编译时被默认隐藏，外部代码使用了某个被隐藏的符号。&lt;/p&gt;
+
+&lt;h4 id=&quot;4-c-abi-版本不一致&quot;&gt;4. c++ abi 版本不一致&lt;/h4&gt;
+&lt;p&gt;最典型的例子就是 gcc 4.x 到 gcc 5.x 版本之间的问题，在  4.x 编辑的动态库，不能在 5.x 中链接使用。&lt;/p&gt;
+
+&lt;h3 id=&quot;解决方法&quot;&gt;解决方法&lt;/h3&gt;
+
+&lt;h4 id=&quot;1-依赖库未找到-1&quot;&gt;1. 依赖库未找到&lt;/h4&gt;
+&lt;ul&gt;
+  &lt;li&gt;使用 ldd -r &lt;lib-file-name&gt;, 确定系统库中是否存在所依赖的库&lt;/lib-file-name&gt;&lt;/li&gt;
+  &lt;li&gt;执行  ldconfig 命令更新 ld 缓存&lt;/li&gt;
+  &lt;li&gt;
+    &lt;table&gt;
+      &lt;tbody&gt;
+        &lt;tr&gt;
+          &lt;td&gt;执行 ldconfig -p&lt;/td&gt;
+          &lt;td&gt;grep {SO_NAME} 查看是否能找到对应的库&lt;/td&gt;
+        &lt;/tr&gt;
+      &lt;/tbody&gt;
+    &lt;/table&gt;
+  &lt;/li&gt;
+  &lt;li&gt;检查 LD_LIBRATY_PATH 是否设置了有效的路径&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h4 id=&quot;2-链接的库版本不一致&quot;&gt;2. 链接的库版本不一致&lt;/h4&gt;
+
+&lt;p&gt;如果系统中之前有安装过相同的库，或者存在多个库，就需要确定链接的具体是哪个库&lt;/p&gt;
+
+&lt;p&gt;有一个特殊场景需要注意下，.so 文件中有个默认 rpath 路径，用于搜索被依赖的库，这个路径优先于系统目录和LD_LIBRARY_PATH。假如 rpath 存在相同名字的 .so 文件，会优先加载这个路径的文件。&lt;/p&gt;
+
+&lt;p&gt;在遇到 undefined symbol 问题时，使用 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;readelf -d &amp;lt;lib-file&amp;gt; | grep - i rpath&lt;/code&gt; 查看:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ readelf -d libSXVideoEngineJni.so | grep rpath
+ 0x000000000000000f (RPATH)              Library rpath: [/home/slayer/workspace/SXVideoEngine-Core/Render/cmake-build-debug:/home/slayer/workspace/SXVideoEngine-Core/Render/../../SXVideoEngine-Core-Lib/blend2d/linux/lib]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;如果存在的路径中有相应的库，可以先重命名文件再测试确认。&lt;/p&gt;
+
+&lt;p&gt;关于连接时的顺序可以查看文档： http://man7.org/linux/man-pages/man8/ld.so.8.html&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;   If a shared object dependency does not contain a slash, then it is
+   searched for in the following order:
+
+   o  Using the directories specified in the DT_RPATH dynamic section
+      attribute of the binary if present and DT_RUNPATH attribute does
+      not exist.  Use of DT_RPATH is deprecated.
+
+   o  Using the environment variable LD_LIBRARY_PATH, unless the
+      executable is being run in secure-execution mode (see below), in
+      which case this variable is ignored.
+
+   o  Using the directories specified in the DT_RUNPATH dynamic section
+      attribute of the binary if present.  Such directories are searched
+      only to find those objects required by DT_NEEDED (direct
+      dependencies) entries and do not apply to those objects' children,
+      which must themselves have their own DT_RUNPATH entries.  This is
+      unlike DT_RPATH, which is applied to searches for all children in
+      the dependency tree.
+
+   o  From the cache file /etc/ld.so.cache, which contains a compiled
+      list of candidate shared objects previously found in the augmented
+      library path.  If, however, the binary was linked with the -z
+      nodeflib linker option, shared objects in the default paths are
+      skipped.  Shared objects installed in hardware capability
+      directories (see below) are preferred to other shared objects.
+
+   o  In the default path /lib, and then /usr/lib.  (On some 64-bit
+      architectures, the default paths for 64-bit shared objects are
+      /lib64, and then /usr/lib64.)  If the binary was linked with the
+      -z nodeflib linker option, this step is skipped.
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h4 id=&quot;3-符号被隐藏-1&quot;&gt;3. 符号被隐藏&lt;/h4&gt;
+
+&lt;p&gt;第三方已经编译好的库，在引入了对应的头文件，使用了其中的某个方法，最终链接的时候出现 undefined symbol，这种情况有可能是库的开发者并没有导出这个方法的符号。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# 使用 nm 命令查看导出的函数符号， 这里查看 License 相关的函数
+$ nm -gDC libSXVideoEngineJni.so | grep -i license
+0000000000008110 T __ZN13SXVideoEngine6Public7License10SetLicenseEPKc
+0000000000008130 T __ZN13SXVideoEngine6Public7License13LicenseStatusEv
+0000000000008190 T __ZN13SXVideoEngine6Public7License19IsVideoCutSupportedEv
+0000000000008170 T __ZN13SXVideoEngine6Public7License26IsDynamicTemplateSupportedEv
+0000000000008150 T __ZN13SXVideoEngine6Public7License26IsStadardTemplateSupportedEv
+
+# nm 返回的并不是原始函数名，通过 c++filt 获取原始名称
+$ c++filt __ZN13SXVideoEngine6Public7License10SetLicenseEPKc
+SXVideoEngine::Public::License::SetLicense(char const*)
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h4 id=&quot;4-c-abi-版本不一致-1&quot;&gt;4. c++ Abi 版本不一致&lt;/h4&gt;
+
+&lt;p&gt;Gcc 对 c++ 的新特性是一步一步的增加的，如果实现了新的特性，就可能会修改 c++ 的 abi，并且会升级 glibc 的版本。&lt;/p&gt;
+
+&lt;p&gt;Abi 链接最常见的错误是 std::string 和 std::list 的在gcc 4.x 和 gcc 5.x 的不同实现引起的。在gcc 4.x 时，gcc 对标准 string 的实现就放在 std 命名空间下，编译时展开为 std::basic_string 。但是 gcc 5.x 开始，对 string 的实现就放在了 std::__cxx11空间里，编译后展开为 std::__cxx11::basic_string 。这就会导致在 gcc 4.x 编译的动态库，假如有的函数使用了 string 作为参数或者返回值，这时导出的函数参数为 std::basic_string 类型。 无法在 gcc 5.x 下编译连接使用。&lt;br /&gt;
+错误类似：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;undefined symbol:  &quot;std::__cxx11 ***&quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;这种情况有一个折中办法就是在gcc 5.x 或以上 编译时，增加 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-D_GLIBCXX_USE_CXX11_ABI=0&lt;/code&gt; 禁用 c++11 abi。&lt;/p&gt;
+
+&lt;p&gt;当然最好的做法就是保证编译器大版本基本一致。在新开发的程序如果用到了 c++ 的新特性，升级 gcc 版本和 glibc 是十分必要的。&lt;/p&gt;
+
+&lt;h3 id=&quot;实用命令总结&quot;&gt;实用命令总结&lt;/h3&gt;
+
+&lt;h4 id=&quot;ldd-命令用于查找某个动态库所依赖的库是否存在&quot;&gt;ldd 命令，用于查找某个动态库所依赖的库是否存在&lt;/h4&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# ldd -r &amp;lt;lib/excutable file&amp;gt; 
+# 找不到的库会出现 not found
+$ ldd -r libSXVideoEngine.so
+        linux-vdso.so.1 =&amp;gt;  (0x00007ffc337d2000)
+        libz.so.1 =&amp;gt; /lib64/libz.so.1 (0x00007f061cf41000)
+        libX11.so.6 =&amp;gt; /lib64/libX11.so.6 (0x00007f061cc03000)
+        libEGL.so.1 =&amp;gt; /lib64/libEGL.so.1 (0x00007f061c9ef000)
+        libGLESv2.so.2 =&amp;gt; /lib64/libGLESv2.so.2 (0x00007f061c7dd000)
+        libpthread.so.0 =&amp;gt; /lib64/libpthread.so.0 (0x00007f061c5c1000)
+        libblend2d.so =&amp;gt; /home/seeshion/workspace/SXVideoEngine-Core/Render/../../SXVideoEngine-Core-Lib/blend2d/linux/lib/libblend2d.so (0x00007f061c187000)
+        libfreeimage.so.3 =&amp;gt; /lib/libfreeimage.so.3 (0x00007f061b8ac000)
+        libavcodec.so.58 =&amp;gt; /lib/libavcodec.so.58 (0x00007f06198b6000)
+        libavformat.so.58 =&amp;gt; /lib/libavformat.so.58 (0x00007f06193e1000)
+        libavutil.so.56 =&amp;gt; /lib/libavutil.so.56 (0x00007f06190bd000)
+        ...
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h4 id=&quot;nm-命令用于读取库被导出的符号&quot;&gt;nm 命令，用于读取库被导出的符号&lt;/h4&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ nm -gDC libSXVideoEngineJni.so | grep -i license
+0000000000008110 T __ZN13SXVideoEngine6Public7License10SetLicenseEPKc
+0000000000008130 T __ZN13SXVideoEngine6Public7License13LicenseStatusEv
+0000000000008190 T __ZN13SXVideoEngine6Public7License19IsVideoCutSupportedEv
+0000000000008170 T __ZN13SXVideoEngine6Public7License26IsDynamicTemplateSupportedEv
+0000000000008150 T __ZN13SXVideoEngine6Public7License26IsStadardTemplateSupportedEv
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h4 id=&quot;readelf-用于读取-elf-文件的相关信息&quot;&gt;readelf 用于读取 elf 文件的相关信息&lt;/h4&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ readelf -d libSXVideoEngineJni.so | grep rpath
+0x000000000000000f (RPATH)              Library rpath: [/home/slayer/workspace/SXVideoEngine-Core/Render/cmake-build-debug:/home/slayer/workspace/SXVideoEngine-Core/Render/../../SXVideoEngine-Core-Lib/blend2d/linux/lib]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h4 id=&quot;cfilt-用于获取符号的原始名&quot;&gt;c++filt 用于获取符号的原始名&lt;/h4&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ c++filt __ZN13SXVideoEngine6Public7License10SetLicenseEPKc
+SXVideoEngine::Public::License::SetLicense(char const*)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+</description>
+        <pubDate>Sun, 24 May 2020 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/linux/2020/05/24/how-to-solve-undefined-symbol-when-link-dynamic-lib-on-linux/</link>
+        <guid isPermaLink="true">http://localhost:4000/linux/2020/05/24/how-to-solve-undefined-symbol-when-link-dynamic-lib-on-linux/</guid>
+        
+        <category>linux</category>
+        
+        
+        <category>linux</category>
+        
+      </item>
+    
+      <item>
+        <title>如何高效的调试 ffmpeg</title>
+        <description>&lt;h3 id=&quot;为什么需要调试-ffmpeg&quot;&gt;为什么需要调试 ffmpeg&lt;/h3&gt;
+
+&lt;p&gt;Ffmpeg 作为音频编解码封装最流行的基础工具，也是一个庞大的程序，大部分使用是使用命令行去处理。但是也有更高级的应用，比如在手机端，服务端开发基于 ffmpeg 开放的 api 的应用程序。&lt;/p&gt;
+
+&lt;p&gt;在移动端，特别是安卓端，只要有音视频的处理，基本是离不开 ffmpeg 开放的 api 。在服务端进行视频渲染解码，封装转码也需要ffmpeg。&lt;/p&gt;
+
+&lt;p&gt;但是在熟悉精通整个 ffmpeg 的大部分接口和音视频相关基础之前，几乎所有人都会遇到 ffmpeg 接口返回的错误码，比如 -1, -22。一般的处理情况都是去看 ffmpeg 提供的 examples, 或者再次搜索一下其他人有没有遇到同样的问题。&lt;/p&gt;
+
+&lt;p&gt;但是 ffmpeg 返回的错误码是公用的，比如 -22 表示 invalid argument, 但是到底是哪一个参数没设置正确， ffmpeg 根本没有任何提示。对于这种问题，供刚入门 ffmpeg 的童鞋的解决方法，要么用排除法，一个一个的方式去试，幸运的时候能试出来，但是试不出来是常态，可能会在这样一个问题上浪费几个小时，甚至几天的时间。&lt;/p&gt;
+
+&lt;p&gt;所以需要找到更高效的方法。&lt;/p&gt;
+
+&lt;h3 id=&quot;如何高效调试&quot;&gt;如何高效调试&lt;/h3&gt;
+
+&lt;h4 id=&quot;1-让--ffmpeg--打印-debug-级别的日志&quot;&gt;1. 让  ffmpeg  打印 debug 级别的日志&lt;/h4&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# 在调用 ffmpeg 相关函数前 设置 ffmpeg 打印的日志级别为 debug
+av_log_set_level(AV_LOG_DEBUG);
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在运行程序时， ffmpeg 会打印所有调试信息，这时候就是要找到可能的反应原因的错误信息，但是我们也有很大可能还是找不到具体原因。&lt;/p&gt;
+
+&lt;h4 id=&quot;2-编译带完整debug-信息的-ffmpeg&quot;&gt;2. 编译带完整debug 信息的 ffmpeg&lt;/h4&gt;
+&lt;p&gt;在使用 ffmpeg 接口出现了问题时，如果能通过 gdb 断点进去 ffmepg 相关的文件去调试，这对有助于快速定位问题。&lt;/p&gt;
+
+&lt;p&gt;但是需要我们手动编译带 debug 信息，并且去掉编译优化的 ffmpeg 库：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;./configure \
+    --prefix=&quot;/usr/&quot; \
+    --pkg-config-flags=&quot;--static&quot; \
+    --extra-cflags=&quot;-I$HOME/ffmpeg_build/include&quot; \
+    --extra-ldflags=&quot;-L$HOME/ffmpeg_build/lib&quot; \
+    --extra-libs=&quot;-lpthread -lm&quot; \
+    --bindir=&quot;/usr/bin&quot; \
+    --enable-debug=3\
+    --disable-optimizations \
+    --disable-stripping \
+    --enable-shared \
+    --enable-pic \
+    --enable-gpl \
+    --enable-nonfree \
+    ...
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;–disable-optimizations 用于去掉编译的优化，这样可以避免在 gdb 调试时，变量出现 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;optimized out&lt;/code&gt; 的提示&lt;/p&gt;
+
+&lt;p&gt;–disable-stripping 禁止去掉 gdb 所需的符号信息&lt;/p&gt;
+
+&lt;p&gt;编译出来的库，就可以使用 gdb 跟踪具体在 ffmpeg 中的哪一步出错，能快速定位问题。&lt;/p&gt;
+</description>
+        <pubDate>Sun, 24 May 2020 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/ffmpeg/2020/05/24/how-to-debug-ffmpeg-effectively/</link>
+        <guid isPermaLink="true">http://localhost:4000/ffmpeg/2020/05/24/how-to-debug-ffmpeg-effectively/</guid>
+        
+        <category>ffmpeg</category>
+        
+        
+        <category>ffmpeg</category>
+        
+      </item>
+    
+      <item>
+        <title>CentOS 安装 nvidia 驱动, OpenGL</title>
+        <description>&lt;p&gt;Ve SDK 需要兼容 nvidia 最新版 driver, nvcodec。特意组装了台式机，显卡为 gtx 1650。&lt;/p&gt;
+
+&lt;p&gt;需要的环境如下：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;os: CentOS 7.5
+gcc: 4.8.5.39
+gpu driver: 440.82 显卡驱动
+nvcodec: 9.2 视频硬编解码 SDK 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;安装依赖&quot;&gt;安装依赖&lt;/h2&gt;
+
+&lt;h4 id=&quot;安装内核构建依赖&quot;&gt;安装内核构建依赖&lt;/h4&gt;
+
+&lt;p&gt;nvidia 驱动在安装时需要重新构建内核以加载 gpu 驱动，需要安装 kernel-devel, kernel-headers&lt;/p&gt;
+
+&lt;p&gt;安装的 kernel-devel, kernel-headers 的版本要严格和当前内核版本一致。否则安装过程中会出现找不到 kernel headers 的错误&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;sudo yum -y insall gcc dkms epel-release
+
+# 如果 yum 搜索到的 kernel-devel 和 kernel-headers 一致
+sudo yum insall  kernel-devel  
+sudo yum install kernel-headers
+
+# 低版本比如 cenos 7.5 使用 yum 安装的版本与内核版本不一致
+# 需要手动下载对应的版本安装，比如内核版本为 3.10.0-862
+
+wget http://vault.centos.org/7.5.1804/os/x86_64/Packages/kernel-devel-3.10.0-862.el7.x86_64.rpm
+wget http://vault.centos.org/7.5.1804/os/x86_64/Packages/kernel-headers-3.10.0-862.el7.x86_64.rpm
+
+sudo yum install kernel-devel-3.10.0-862.el7.x86_64.rpm
+sudo yum install kernel-headers-3.10.0-862.el7.x86_64.rpm
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h4 id=&quot;禁用系统自带的-nouveau-驱动-可选&quot;&gt;禁用系统自带的 nouveau 驱动 (可选)&lt;/h4&gt;
+
+&lt;p&gt;nouveau 是一个 nvidia 显卡的第三方开源驱动，一般 linux 发行版的内核都会默认自带并使用这个驱动模块。
+但是一些新特性没有支持。&lt;/p&gt;
+
+&lt;p&gt;新版 nvidia 驱动安装时会自动禁用 nouveau&lt;/p&gt;
+
+&lt;p&gt;查看 nouveau 有没有启用使用&lt;/p&gt;
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;lsmod | grep nouveau
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;禁用 nouveau；&lt;/p&gt;
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;sudo vim /etc/modprobe.d/blacklist-nouveau.conf
+
+# 添加以下代码
+blacklist nouveau
+options nouveau modeset=0
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;安装驱动&quot;&gt;安装驱动&lt;/h2&gt;
+
+&lt;h4 id=&quot;下载安装&quot;&gt;下载安装&lt;/h4&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;wget https://us.download.nvidia.cn/XFree86/Linux-x86_64/440.82/NVIDIA-Linux-x86_64-440.82.run
+sudo chmod +x NVIDIA-Linux-x86_64-440.82.run
+sudo ./NVIDIA-Linux-x86_64-440.82.run
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h4 id=&quot;重启检查是否安装成功&quot;&gt;重启检查是否安装成功&lt;/h4&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;nvidia-smi
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h4 id=&quot;检查-opengl-信息&quot;&gt;检查 opengl 信息&lt;/h4&gt;
+
+&lt;p&gt;nvidia 驱动自带 openGL 的实现，默认随着驱动被安装。&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;使用 nvidia-settings 查看&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ nvidia-settings -g | grep -i &quot;opengl&quot;
+OpenGL vendor string: NVIDIA Corporation
+OpenGL renderer string: GeForce GTX 1650/PCIe/SSE2
+OpenGL version string: 4.6.0 NVIDIA 440.82
+OpenGL extensions:
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;使用 mesa-utils
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ sudo yum -y install mesa-utils
+$ glxinfo | grep -i opengl
+OpenGL vendor string: NVIDIA Corporation
+OpenGL renderer string: GeForce GTX 1650/PCIe/SSE2
+OpenGL core profile version string: 4.4.0 NVIDIA 440.82
+OpenGL core profile shading language version string: 4.40 NVIDIA via Cg compiler
+OpenGL core profile context flags: (none)
+OpenGL core profile profile mask: core profile
+OpenGL core profile extensions:
+OpenGL version string: 4.6.0 NVIDIA 440.82
+OpenGL shading language version string: 4.60 NVIDIA
+OpenGL context flags: (none)
+OpenGL profile mask: (none)
+OpenGL extensions:
+OpenGL ES profile version string: OpenGL ES 3.2 NVIDIA 440.82
+OpenGL ES profile shading language version string: OpenGL ES GLSL ES 3.20
+OpenGL ES profile extensions:
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;安装-cuda-驱动可选&quot;&gt;安装 cuda 驱动（可选)&lt;/h2&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;wget http://developer.download.nvidia.com/compute/cuda/10.2/Prod/local_installers/cuda_10.2.89_440.33.01_linux.run
+chmod +x cuda_10.2.89_440.33.01_linux.run
+sudo ./cuda_10.2.89_440.33.01_linux.run
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;其他实用命令&quot;&gt;其他实用命令&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;查看显卡信息&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ sudo lshw -numeric -C display
+  *-display UNCLAIMED       
+       description: VGA compatible controller
+       product: NVIDIA Corporation [10DE:1F82]
+       vendor: NVIDIA Corporation [10DE]
+       physical id: 0
+       bus info: pci@0000:01:00.0
+       version: a1
+       width: 64 bits
+       clock: 33MHz
+       capabilities: pm msi pciexpress vga_controller bus_master cap_list
+       configuration: latency=0
+       resources: memory:f6000000-f6ffffff memory:e0000000-efffffff memory:f0000000-f1ffffff ioport:e000(size=128) memory:f7000000-f707ffff
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;或&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ lspci | grep -i nvidia
+01:00.0 VGA compatible controller: NVIDIA Corporation Device 1f82 (rev a1)
+01:00.1 Audio device: NVIDIA Corporation Device 10fa (rev a1)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+</description>
+        <pubDate>Wed, 13 May 2020 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/linux/video/audio%20tech/2020/05/13/centos-install-nvidia-driver-and-opengl/</link>
+        <guid isPermaLink="true">http://localhost:4000/linux/video/audio%20tech/2020/05/13/centos-install-nvidia-driver-and-opengl/</guid>
+        
+        <category>nvidia</category>
+        
+        <category>opengl</category>
+        
+        
+        <category>linux</category>
+        
+        <category>video/audio tech</category>
+        
+      </item>
+    
+      <item>
+        <title>MacOS 编译最新版 ffmpeg (4.2.1) 动态库</title>
+        <description>&lt;p&gt;在 macOS 下编译相对于 linux 要简单一些。由于在 macOS 下一般是开发使用，所以在编译之前使用 homebrew 安装相关依赖即可。&lt;/p&gt;
+
+&lt;h3 id=&quot;安装依赖&quot;&gt;安装依赖&lt;/h3&gt;
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;automake 1.16.2&lt;/p&gt;
+
+    &lt;p&gt;brew install automake&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;pkg-config 0.29.2&lt;/p&gt;
+
+    &lt;p&gt;brew install pkg-config&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;fdk-aac 2.0.1&lt;/p&gt;
+
+    &lt;p&gt;brew install fdk-aac&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;lame 3.100&lt;/p&gt;
+
+    &lt;p&gt;brew install lame&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;libvorbis 1.3.6&lt;/p&gt;
+
+    &lt;p&gt;brew install libvorbis&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;libopus 1.3.1&lt;/p&gt;
+
+    &lt;p&gt;brew install opus&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;libbluray 1.1.1&lt;/p&gt;
+
+    &lt;p&gt;brew install libbluray&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;libvpx 1.8.2&lt;/p&gt;
+
+    &lt;p&gt;brew install libvpx&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;libx265 3.3&lt;/p&gt;
+
+    &lt;p&gt;brew install x265&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;libx264 r2917&lt;/p&gt;
+
+    &lt;p&gt;brew install x264&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;libxvid 1.3.5&lt;/p&gt;
+
+    &lt;p&gt;brew install xvid&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;sdl2   2.0.9&lt;/p&gt;
+
+    &lt;p&gt;brew install sdl2&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;2-编译-ffmpeg&quot;&gt;2. 编译 ffmpeg&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;下载&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  wget http://ffmpeg.org/releases/ffmpeg-4.2.1.tar.gz
+  tar -xzvf ffmpeg-4.2.1.tar.gz
+  cd ffmpeg-4.2.1
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;执行 ./configure 检查依赖，出现 not found 请检查，依赖库是否有安装成功&lt;/p&gt;
+
+    &lt;p&gt;以下 enable 的选项是 ve SDK 所需的，其他选项可自行选择添加&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  ./configure  \
+  --prefix=/usr/local \
+  --enable-shared \
+  --enable-pic \
+  --enable-gpl \
+  --enable-nonfree \
+  --enable-libmp3lame \
+  --enable-libfdk_aac \
+  --enable-libvorbis \
+  --enable-libopus \
+  --enable-libbluray \
+  --enable-libvpx \
+  --enable-libx265 \
+  --enable-libx264 \
+  --enable-libxvid \
+  --enable-lzma \
+  --enable-opencl \
+  --enable-audiotoolbox \
+  --enable-videotoolbox \
+  --enable-sdl2 \
+  --enable-pthreads \
+  --enable-x86asm \
+  --enable-postproc \
+  --disable-securetransport \
+  --disable-libjack \
+  --disable-libopencore-amrnb \
+  --disable-libopencore-amrwb \
+  --disable-libxcb \
+  --disable-libxcb-shm \
+  --disable-libxcb-xfixes \
+  --disable-indevs \
+  --disable-outdevs 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;编译安装&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  make -j8 &amp;amp;&amp;amp; make install
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr /&gt;
+&lt;h3 id=&quot;ffmpeg-非必须选项-按需选择&quot;&gt;ffmpeg 非必须选项, 按需选择&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;libmodplug 0.8.9.0&lt;/p&gt;
+
+    &lt;p&gt;brew install libmodplug&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;libopenjpeg 2.3.1&lt;/p&gt;
+
+    &lt;p&gt;brew install openjpeg&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;libsoxr 0.1.3&lt;/p&gt;
+
+    &lt;p&gt;brew install libsoxr&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;libspeex  1.2.0&lt;/p&gt;
+
+    &lt;p&gt;brew install speex&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;gnutls 3.6.8&lt;/p&gt;
+
+    &lt;p&gt;brew install gnutls&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+</description>
+        <pubDate>Mon, 11 May 2020 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/ffmpeg/video/audio%20tech/2020/05/11/compile-ffmpeg-dynamic-libary-on-macos/</link>
+        <guid isPermaLink="true">http://localhost:4000/ffmpeg/video/audio%20tech/2020/05/11/compile-ffmpeg-dynamic-libary-on-macos/</guid>
+        
+        <category>macos</category>
+        
+        <category>ffmpeg</category>
+        
+        
+        <category>ffmpeg</category>
+        
+        <category>video/audio tech</category>
+        
+      </item>
+    
+      <item>
+        <title>CentOS 编译最新版 ffmpeg (4.2.1) 动态库</title>
+        <description>&lt;p&gt;准备工作&lt;/p&gt;
+
+&lt;p&gt;mkdir $HOME/ffmepg_build  # 三方库安装目录
+mkdir $HOME/ffmpeg_source # 所有库的下载目录
+mkdir $HOME/bin           # 可执行二进制文件安装目录&lt;/p&gt;
+
+&lt;p&gt;把安装的第三方库目录添加到系统查找路径中：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    sudo vim /etc/ld.so.conf
+    # 添加, {$HOME} 替换成实际目录，比如 /home/slayer/ffmpeg_build/lib
+    {$HOME}/ffmpeg_build/lib
+    
+    # 重新加载 ldconfig
+    sudo ldconfig
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h3 id=&quot;编译依赖工具&quot;&gt;编译依赖工具&lt;/h3&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;sudo yum install automake autoconf libtool build-essential pkg-config gcc-c++
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;第三方依赖&quot;&gt;第三方依赖&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;nasm&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; cd nasm
+ ./autogen.sh
+ PATH=&quot;$HOME/bin:$PATH&quot; ./configure --prefix=&quot;$HOME/ffmpeg_build&quot; --bindir=&quot;$HOME/bin&quot;
+ PATH=&quot;$HOME/bin:$PATH&quot; make
+ make install
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;yasm&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; cd yasm-1.3.0 &amp;amp;&amp;amp; ./configure --prefix=&quot;\(HOME/ffmpeg_build&quot; --bindir=&quot;\)HOME/bin&quot;
+ make &amp;amp;&amp;amp; make install
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;fdk-aac&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;wget https://downloads.sourceforge.net/opencore-amr/fdk-aac-2.0.1.tar.gz
+tar xzvf fdk-aac-2.0.1.tar.gz 
+cd fdk-aac-2.0.1 &amp;amp;&amp;amp; autoreconf -fiv &amp;amp;&amp;amp; ./configure --prefix=&quot;$HOME/ffmpeg_build&quot; --enable-shared
+make &amp;amp;&amp;amp;  make install
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;opus&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  cd opus-1.3.1 &amp;amp;&amp;amp; ./configure --prefix=&quot;$HOME/ffmpeg_build&quot; --enable-shared
+  make &amp;amp;&amp;amp; make install
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;lame&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; cd lame-3.00 &amp;amp;&amp;amp; ./configure --prefix=&quot;$HOME/ffmpeg_build&quot; --enable-nasm --enable-shared
+ make &amp;amp;&amp;amp;  make install
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;vorbis&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  # install ogg
+  sudo yum install libogg-devel.x86_64
+
+  cd libvorbis &amp;amp;&amp;amp; -- autoreconf -fi &amp;amp;&amp;amp; ./autogen.sh
+
+  ./configure --prefix=&quot;$HOME/ffmpeg_build&quot; --enable-shared
+  make 
+  make install
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;x264&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; PATH=&quot;$HOME/bin:$PATH&quot; ./configure --prefix=&quot;$HOME/ffmpeg_build&quot; --bindir=&quot;$HOME/bin&quot; --enable-shared 
+ PATH=&quot;$HOME/bin:$PATH&quot; make
+ make install
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;x265&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  cd ~/ffmpeg_sources/x265/build/linux
+  PATH=&quot;$HOME/bin:$PATH&quot; cmake -G &quot;Unix Makefiles&quot; -DCMAKE_INSTALL_PREFIX=&quot;$HOME/ffmpeg_build&quot; -DENABLE_SHARED:bool=on  ../../source
+  make &amp;amp;&amp;amp; install
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;vpx&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; PATH=&quot;$HOME/bin:$PATH&quot; ./configure --prefix=&quot;$HOME/ffmpeg_build&quot; --disable-examples --disable-unit-tests --enable-shared
+ PATH=&quot;$HOME/bin:$PATH&quot; make
+ make install
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;bluray&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  # 安装 libxml2 
+  sudo yum install  libxml2-devel.x86_64
+
+    
+  # 编译 bluray 
+  wget https://download.videolan.org/pub/videolan/libbluray/1.1.2/libbluray-1.1.2.tar.bz2
+  tar -jxvf libbluray-1.1.2.tar.bz2 
+  cd libbluray-1.1.2/
+  PATH=&quot;$HOME/bin:$PATH&quot; ./configure --prefix=&quot;$HOME/ffmpeg_build&quot;  --enable-shared --disable-bdjava-jar
+    
+  make &amp;amp;&amp;amp; make install
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;libxvid&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  # 通过 yum 安装
+  sudo yum install  xvidcore-devel.x86_64 
+
+    
+    
+  # 手动安装
+  wget http://packman.links2linux.de/download/xvidcore/3187274/libxvidcore4-1.3.5-pm152.2.6.x86_64.rpm
+  wget http://packman.links2linux.de/download/xvidcore/3187274/libxvidcore4-1.3.5-pm152.2.6.x86_64.rpm
+  // sudo yum localinstall libxvidcore4-1.3.5-pm152.2.6.x86_64.rpm 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;sdl2&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  wget https://www.libsdl.org/release/SDL2-2.0.12.tar.gz
+  tar -xzvf SDL2-2.0.12.tar.gz
+  cd SDL2-2.0.12/
+    
+  PATH=&quot;$HOME/bin:$PATH&quot; ./configure --prefix=&quot;$HOME/ffmpeg_build&quot;  --enable-shared 
+
+  make -j8 &amp;amp;&amp;amp; make install
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;2-编译-ffmpeg&quot;&gt;2. 编译 ffmpeg&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;下载&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  wget http://ffmpeg.org/releases/ffmpeg-4.2.1.tar.gz
+  tar -xzvf ffmpeg-4.2.1.tar.gz
+  cd ffmpeg-4.2.1
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;执行 ./configure 检查依赖，出现 not found 请检查，依赖库是否有安装成功&lt;/p&gt;
+
+    &lt;p&gt;以下 enable 的选项是 ve SDK 所需的，其他选项可自行选择添加&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  ./configure \
+  --enable-shared \
+  --enable-pic \
+  --enable-gpl \
+  --enable-nonfree \
+  --enable-libmp3lame \
+  --enable-libfdk_aac \
+  --enable-libvorbis \
+  --enable-libopus \
+  --enable-libbluray \
+  --enable-libvpx \
+  --enable-libx265 \
+  --enable-libx264 \
+  --enable-libxvid \
+  --enable-lzma \
+  --enable-sdl2 \
+  --enable-pthreads \
+  --enable-x86asm \
+  --enable-postproc \
+  --disable-securetransport \
+  --disable-libjack \
+  --disable-libopencore-amrnb \
+  --disable-libopencore-amrwb \
+  --disable-libxcb \
+  --disable-libxcb-shm \
+  --disable-libxcb-xfixes \
+  --disable-indevs \
+  --disable-outdevs
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;编译安装&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  make -j8 &amp;amp;&amp;amp; make install
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;其他可选&quot;&gt;其他可选&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;opencl&lt;/p&gt;
+
+    &lt;p&gt;系统默认没有opencl, 通常安装了显卡驱动都能加上 –enable-opencl&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;aom&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; mkdir -p aom_build &amp;amp;&amp;amp;  cd aom_build
+
+ PATH=&quot;$HOME/bin:$PATH&quot; cmake -G &quot;Unix Makefiles&quot; -DCMAKE_INSTALL_PREFIX=&quot;$HOME/ffmpeg_build&quot; -DBUILD_SHARED_LIBS=1 -DENABLE_SHARED=on -DENABLE_NASM=on ../aom &amp;amp;&amp;amp; \
+ PATH=&quot;$HOME/bin:$PATH&quot; make -j8  &amp;amp;&amp;amp; \
+ sudo make install
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;freetype2&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  cd freetype-2.10.1 &amp;amp;&amp;amp; ./configure --prefix=&quot;$HOME/ffmpeg_build&quot; --enable-shared
+  make
+  make install
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+</description>
+        <pubDate>Mon, 11 May 2020 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/ffmpeg/video/audio%20tech/2020/05/11/compile-ffmpeg-dynamic-libary-on-centos/</link>
+        <guid isPermaLink="true">http://localhost:4000/ffmpeg/video/audio%20tech/2020/05/11/compile-ffmpeg-dynamic-libary-on-centos/</guid>
+        
+        <category>linux</category>
+        
+        <category>centos</category>
+        
+        <category>ffmpeg</category>
+        
+        
+        <category>ffmpeg</category>
+        
+        <category>video/audio tech</category>
+        
+      </item>
+    
+      <item>
+        <title>在同一台linux机器编译多个 php 版本的扩展</title>
+        <description>&lt;p&gt;一般 php 扩展编译安装方式如下&lt;/p&gt;
+
+&lt;h3 id=&quot;扩展编译步骤&quot;&gt;扩展编译步骤&lt;/h3&gt;
+
+&lt;p&gt;以扩展 ataencoder 为例&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;进入扩展目录&lt;/li&gt;
+  &lt;li&gt;./phpize&lt;/li&gt;
+  &lt;li&gt;./configure ./configure –enable-ataencoder&lt;/li&gt;
+  &lt;li&gt;make&lt;/li&gt;
+  &lt;li&gt;make install&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;编译不同-php-版本的扩展&quot;&gt;编译不同 php 版本的扩展&lt;/h3&gt;
+
+&lt;p&gt;如果扩展需要兼容多个 php 版本，则需要在本地先编译测试，需要为不同版本编译不同的 so 包, 步骤如下:&lt;/p&gt;
+
+&lt;h3 id=&quot;安装不同版本的-php&quot;&gt;安装不同版本的 php&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;下载对应版本的源码，比如 7.0.33 和 7.2.10 版本&lt;/li&gt;
+  &lt;li&gt;分别进入两个版本的目录，编译并安装&lt;/li&gt;
+  &lt;li&gt;这个时候系统就有两个版本的 php&lt;/li&gt;
+  &lt;li&gt;在 ubuntu 系统上，可以使用 update-alternatives 来设置默认的 php 版本，如果没有这个工具，则可以使用软链接实现&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;编译安装步骤&quot;&gt;编译安装步骤&lt;/h3&gt;
+&lt;ul&gt;
+  &lt;li&gt;选定要编译 php 版本的环境&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;需要保持　php, phpize, php-config 为目标版本。&lt;/p&gt;
+
+&lt;p&gt;phpize 用来初始化扩展，确定扩展使用的 php api 版本, 并且生成配置文件比如　configure 脚本&lt;br /&gt;
+php-config 被　configure 用来确定包含 php 的头文件和一些库&lt;/p&gt;
+
+&lt;p&gt;ubuntu 系统下可以使用　update-alternatives 替换, 其他 linux 发行版如果没有类似的工具，可以使用软链接替换。&lt;/p&gt;
+
+&lt;p&gt;+　设置 php 版本&lt;/p&gt;
+
+&lt;div class=&quot;language-text highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;update-alternatives --list php
+/usr/bin/php7.0
+/usr/bin/php7.2
+
+# 设置 php 为　7.0 版本
+update-alternatives --set php /usr/bin/php7.0
+
+# 或是使用软链接
+# ln -s /usr/bin/php7.0 /usr/bin/php
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;设置 phpize 版本&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;language-text highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# 查看可用的 phpize
+update-alternatives --list phpize
+/usr/bin/phpize7.0
+/usr/bin/phpize7.2
+
+# 设置 phpize 为　7.0 版本
+update-alternatives --set phpize /usr/bin/phpize7.0
+
+# 或是使用软链接
+# ln -s /usr/bin/phpize7.0 /usr/bin/phpize
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;设置 php-config 版本&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;language-text highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# 查看可用的 php-config
+update-alternatives --list php-config
+/usr/bin/php-config7.0
+/usr/bin/php-config7.2
+
+# 设置 php-config 为　7.0 版本
+update-alternatives --set php-config /usr/bin/php-config7.0
+
+# 或是使用软链接
+# ln -s /usr/bin/php-config7.0 /usr/bin/php-config
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;设置完以上步骤后，就可以按文章开头的步骤编译安装 php7.0或其他 php 版本的扩展了。&lt;/p&gt;
+</description>
+        <pubDate>Sun, 16 Feb 2020 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/php/linux/2020/02/16/comiple-php-extension-of-different-php-version-on-a-linux-machine/</link>
+        <guid isPermaLink="true">http://localhost:4000/php/linux/2020/02/16/comiple-php-extension-of-different-php-version-on-a-linux-machine/</guid>
+        
+        <category>php</category>
+        
+        <category>php_extension</category>
+        
+        
+        <category>php</category>
+        
+        <category>linux</category>
+        
+      </item>
+    
+      <item>
+        <title>Ffmpeg sws_scale 颜色转换，右侧花屏问题研究及解决方案</title>
+        <description>&lt;p&gt;使用 ffmpeg 解码视频后，需要将视频颜色从 yuv420p 转换到 rgba 后渲染。&lt;/p&gt;
+
+&lt;p&gt;在视频宽度不为8的倍数时，会出现视频画面右侧出现一条花屏。比如视频的宽度为 566， 566 % 8 = 6, 右侧会有6个像素宽度的花屏。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;转换代码如下：&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// 初始化转换上下文对象，输入颜色模式为 yuv420p, 输出格式为 rgba, 宽高不变&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;mColorConversionContext&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sws_getCachedContext&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;	
+    &lt;span class=&quot;n&quot;&gt;mColorConversionContext&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;mMeta&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mWidth&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;mMeta&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mHeight&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;AV_PIX_FMT_YUV420P&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;mMeta&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mWidth&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;mMeta&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mHeight&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;AV_PIX_FMT_RGBA&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;SWS_FAST_BILINEAR&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;nullptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;nullptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;nullptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// 初始化目标数据相关对象&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;mConvertedFrame&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;av_frame_alloc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bufferSize&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;av_image_get_buffer_size&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;AV_PIX_FMT_RGBA&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;mMeta&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mWidth&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;mMeta&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mHeight&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;mConvertedBuffer&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;uint8_t&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;av_malloc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bufferSize&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;sizeof&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;uint8_t&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;av_image_fill_arrays&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mConvertedFrame&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                    &lt;span class=&quot;n&quot;&gt;mConvertedFrame&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;linesize&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                    &lt;span class=&quot;n&quot;&gt;mConvertedBuffer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                    &lt;span class=&quot;n&quot;&gt;AV_PIX_FMT_RGBA&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                    &lt;span class=&quot;n&quot;&gt;mMeta&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mWidth&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                    &lt;span class=&quot;n&quot;&gt;mMeta&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mHeight&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;// ...&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;// 从 yuv420p 转换到 rgba&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;sws_scale&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mColorConversionContext&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;uint8_t&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mDecodeFrameContext&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mFrame&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;mDecodeFrameContext&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mFrame&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;linesize&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+            &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;mMeta&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mHeight&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;mConvertedFrame&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;mConvertedFrame&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;linesize&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;查找过程中，依次尝试了以下方法：&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;直接把解码后的 AVFrame 写成图片，图片数据完好&lt;/li&gt;
+  &lt;li&gt;把 sws_scale 后的数据写入图片，图片右侧出现花屏&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;以此确定 sws_scale 转换后右侧超出的像素数据有问题，通过对目标数据内存填零（rgba 四位全部填0，则此时画面为透明），再把 sws_scale 转换后的数据写入图片，多出的部分为透明，
+表明 sws_scale 并没有往那些位置填入颜色数据。&lt;/p&gt;
+
+&lt;p&gt;通过 ffmpeg 官方邮件用户组查到，该问题 2012 年就已经被发现了，直到 2019 年，正在使用的 4.1.3 版本也没有修复。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;修复后的代码如下：&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;swsFlags&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SWS_FAST_BILINEAR&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// 当视频宽高不为8的倍数，同时转换又没有尺寸变化时，会导致右侧出现一条花屏&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;// 这个问题从 2012年被发现，到2019年的 4.1.3 版本还继续存在&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;// 通过增加 SWS_ACCURATE_RND 可以规避这个问题&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mMeta&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mWidth&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&quot;mh&quot;&gt;0x7&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mMeta&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mHeight&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&quot;mh&quot;&gt;0x7&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;swsFlags&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SWS_ACCURATE_RND&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// 初始化转换上下文对象&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;mColorConversionContext&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sws_getCachedContext&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;	
+    &lt;span class=&quot;n&quot;&gt;mColorConversionContext&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;mMeta&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mWidth&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;mMeta&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mHeight&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;AV_PIX_FMT_YUV420P&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;mMeta&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mWidth&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;mMeta&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mHeight&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;AV_PIX_FMT_RGBA&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;swsFlags&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;nullptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;nullptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;nullptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// ...&lt;/span&gt;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;上述代码只在宽高补位8的倍数的情况下，启用 SWS_ACCURATE_RND 参数，强制 ffmpeg swscale 不使用 non_resizing 的算法，从而规避这个问题。&lt;/p&gt;
+
+&lt;p&gt;相关资料： http://libav-users.943685.n4.nabble.com/Libav-user-sws-scale-has-weird-behavior-when-not-resizing-td4655402.html&lt;/p&gt;
+
+</description>
+        <pubDate>Fri, 20 Dec 2019 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/ffmpeg/video/audio%20tech/2019/12/20/ffmpeg-sws-scale-generate-right-band-if-not-resizing/</link>
+        <guid isPermaLink="true">http://localhost:4000/ffmpeg/video/audio%20tech/2019/12/20/ffmpeg-sws-scale-generate-right-band-if-not-resizing/</guid>
+        
+        <category>ffmpeg</category>
+        
+        <category>sws_scale</category>
+        
+        
+        <category>ffmpeg</category>
+        
+        <category>video/audio tech</category>
+        
+      </item>
+    
+      <item>
+        <title>Linux localtime/localtime_r 导致 fork 子进程死锁卡死问题的研究</title>
+        <description>&lt;h3 id=&quot;问题背景&quot;&gt;问题背景&lt;/h3&gt;
+
+&lt;p&gt;ve 短视频渲染服务程序基于 opengl 和 c/c++ 开发， 服务器渲染现阶段只支持 linux，渲染流程是： 父进程下载数据和素材，再 fork 一个渲染子进程进行渲染。&lt;/p&gt;
+
+&lt;p&gt;近期发现生产环境中，极小概率下，会出现渲染子进程假死、卡住以及无任何日志输出的现象。&lt;/p&gt;
+
+&lt;p&gt;这个问题在现有生产流程下很难重现，最初采用的解决方法是在父进程中检测渲染进程启动失败时，发送信号 Kill 掉后重试任务。&lt;/p&gt;
+
+&lt;p&gt;最近特意抽出时间仔细分析并解决了这个问题，觉得很有意思，记录下来。&lt;/p&gt;
+
+&lt;h3 id=&quot;问题查找&quot;&gt;问题查找&lt;/h3&gt;
+
+&lt;h4 id=&quot;重现问题&quot;&gt;重现问题&lt;/h4&gt;
+
+&lt;p&gt;渲染服务由于需要预先下载素材和准备数据，很难达到同时启动多个任务的情况，所以特意重写了多线程支持本地多任务的测试程序。&lt;/p&gt;
+
+&lt;p&gt;基本流程就是同一时间启动多个线程，每个线程 fork 一个子进程进行渲染，然后等待所有线程完成。&lt;/p&gt;
+
+&lt;p&gt;经过多次测试重现假死的概率很高。&lt;/p&gt;
+
+&lt;h4 id=&quot;定位问题&quot;&gt;定位问题&lt;/h4&gt;
+
+&lt;p&gt;稳定重现问题是定位问题的基本条件，在稍微修改测试程序后，使用 debug 编译，正常启动后就可以使用 gdb 调试，找到进程具体卡死的位置，步骤如下：&lt;/p&gt;
+
+&lt;div class=&quot;language-shell highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;slayer@slayer-B250M-D3H:~&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;gdb &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt; 12680
+GNU gdb &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;Ubuntu 7.11.1-0ubuntu1~16.5&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; 7.11.1
+Copyright &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;C&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; 2016 Free Software Foundation, Inc.
+...
+&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;Thread debugging using libthread_db enabled]
+...
+&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;gdb&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; info threads
+  Id   Target Id         Frame 
+&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt; 1    Thread 0x7ff6287a6700 &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;LWP 12680&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;SXVideoEngineDe&quot;&lt;/span&gt; __lll_lock_wait_private &lt;span class=&quot;o&quot;&gt;()&lt;/span&gt;
+    at ../sysdeps/unix/sysv/linux/x86_64/lowlevellock.S:95
+&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;gdb&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; thread 1
+&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;Switching to thread 1 &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;Thread 0x7ff6287a6700 &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;LWP 12680&lt;span class=&quot;o&quot;&gt;))]&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;#0  __lll_lock_wait_private () at ../sysdeps/unix/sysv/linux/x86_64/lowlevellock.S:95&lt;/span&gt;
+95	&lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; ../sysdeps/unix/sysv/linux/x86_64/lowlevellock.S
+&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;gdb&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; where
+&lt;span class=&quot;c&quot;&gt;#0  __lll_lock_wait_private () at ../sysdeps/unix/sysv/linux/x86_64/lowlevellock.S:95&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;#1  0x00007ff6421bfc76 in __tz_convert (timer=0x7ff6424c8ac0 &amp;lt;tzset_lock&amp;gt;, use_localtime=1, tp=0x7ff6287a39d0)&lt;/span&gt;
+    at tzset.c:616
+&lt;span class=&quot;c&quot;&gt;#2  0x00000000013b2c01 in el::base::utils::DateTime::buildTimeInfo (currTime=0x7ff6287a39a0, timeInfo=0x7ff6287a39d0)&lt;/span&gt;
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/easylogging++.cc:1232
+&lt;span class=&quot;c&quot;&gt;#3  0x00000000013b2751 in el::base::utils::DateTime::timevalToString[abi:cxx11](timeval, char const*, el::base::SubsecondPrecision const*) (tval=..., format=0x37bdbb0 &quot;%Y-%M-%d %H:%m:%s,%g&quot;, ssPrec=0x37f2cdc)&lt;/span&gt;
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/easylogging++.cc:1190
+&lt;span class=&quot;c&quot;&gt;#4  0x00000000013b26da in el::base::utils::DateTime::getDateTime[abi:cxx11](char const*, el::base::SubsecondPrecision const*) (format=0x37bdbb0 &quot;%Y-%M-%d %H:%m:%s,%g&quot;, ssPrec=0x37f2cdc)&lt;/span&gt;
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/easylogging++.cc:1184
+&lt;span class=&quot;c&quot;&gt;#5  0x00000000013ba36c in el::base::DefaultLogBuilder::build[abi:cxx11](el::LogMessage const*, bool) const (&lt;/span&gt;
+    &lt;span class=&quot;nv&quot;&gt;this&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;0x37b9ff0, &lt;span class=&quot;nv&quot;&gt;logMessage&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;0x7ff6287a4030, &lt;span class=&quot;nv&quot;&gt;appendNewLine&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/easylogging++.cc:2412
+&lt;span class=&quot;c&quot;&gt;#6  0x00000000013b9d94 in el::base::DefaultLogDispatchCallback::handle (this=0x37f8b20, data=0x7ff6287a3ee0)&lt;/span&gt;
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/easylogging++.cc:2212
+&lt;span class=&quot;c&quot;&gt;#7  0x00000000013bb2cf in el::base::LogDispatcher::dispatch (this=0x7ff6287a3f70)&lt;/span&gt;
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/easylogging++.cc:2499
+&lt;span class=&quot;c&quot;&gt;#8  0x00000000013bc0b5 in el::base::Writer::triggerDispatch (this=0x7ff6287a42e0)&lt;/span&gt;
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/easylogging++.cc:2632
+&lt;span class=&quot;c&quot;&gt;#9  0x00000000013bbdf8 in el::base::Writer::processDispatch (this=0x7ff6287a42e0)&lt;/span&gt;
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/easylogging++.cc:2613
+&lt;span class=&quot;c&quot;&gt;#10 0x00000000004392b8 in el::base::Writer::~Writer (this=0x7ff6287a42e0, __in_chrg=&amp;lt;optimized out&amp;gt;)&lt;/span&gt;
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/easylogging++.h:3213
+&lt;span class=&quot;c&quot;&gt;#11 0x00000000013aa518 in VEPrintLog (level=3, str=0x1ab9448 &quot;Child process ve_render_process_start() : %s&quot;, &lt;/span&gt;
+    &lt;span class=&quot;nv&quot;&gt;args&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;0x7ff6287a53a0&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; at /home/slayer/workspace/SXVideoEngine-Core/Render/log/corelog.cpp:135
+&lt;span class=&quot;c&quot;&gt;#12 0x00000000013aa0ad in VELogInfo (str=0x1ab9448 &quot;Child process ve_render_process_start() : %s&quot;)&lt;/span&gt;
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/corelog.cpp:90
+&lt;span class=&quot;c&quot;&gt;#13 0x000000000180b09d in ve_render_process_start (id=0x7ff6287a5740, &lt;/span&gt;
+    &lt;span class=&quot;nv&quot;&gt;handler&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;0x43abb5 &amp;lt;MultiThreadVideoTest::Handler&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;unsigned long&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;, char const&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&amp;gt;)&lt;/span&gt;
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/server/RenderProcess.cpp:597
+&lt;span class=&quot;c&quot;&gt;#14 0x000000000043acea in MultiThreadVideoTest::RenderThread (context=0x7ffe95b37320)&lt;/span&gt;
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/SXVideoEngineDemo.cpp:342
+&lt;span class=&quot;c&quot;&gt;#15 0x00007ff6470e46ba in start_thread (arg=0x7ff6287a6700) at pthread_create.c:333&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;#16 0x00007ff64220941d in clone () at ../sysdeps/unix/sysv/linux/x86_64/clone.S:109&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;gdb&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; 
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;确定死锁卡死的点为：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#0  __lll_lock_wait_private () at ../sysdeps/unix/sysv/linux/x86_64/lowlevellock.S:95
+#1  0x00007ff6421bfc76 in __tz_convert (timer=0x7ff6424c8ac0 &amp;lt;tzset_lock&amp;gt;, use_localtime=1, tp=0x7ff6287a39d0)
+    at tzset.c:616
+#2  0x00000000013b2c01 in el::base::utils::DateTime::buildTimeInfo (currTime=0x7ff6287a39a0, timeInfo=0x7ff6287a39d0)
+    at /home/slayer/workspace/SXVideoEngine-Core/Render/log/easylogging++.cc:1232
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;查看源码，确定 easylogging 在打印日志需要格式化当前时间，调用了 localtime_r 的方法， 查看 localtime.c 源码，&lt;/p&gt;
+
+&lt;p&gt;函数调用栈为： localtime_r -&amp;gt; __localtime_r -&amp;gt; __localtime64_r -&amp;gt; __tz_convert&lt;/p&gt;
+
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tm&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;
+&lt;span class=&quot;nf&quot;&gt;__localtime64_r&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;__time64_t&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;t&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tm&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;__tz_convert&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;t&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;cm&quot;&gt;/* Provide a 32-bit variant if needed.  */&lt;/span&gt;
+&lt;span class=&quot;cp&quot;&gt;#if __TIMESIZE != 64
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tm&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;
+&lt;span class=&quot;nf&quot;&gt;__localtime_r&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;time_t&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;t&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tm&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;__time64_t&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;t64&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;t&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;__localtime64_r&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;t64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;libc_hidden_def&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;__localtime64_r&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;cp&quot;&gt;#endif
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;weak_alias&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;__localtime_r&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;localtime_r&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;继续查看 __tz_convert 的源码， 在 tzset.c 中, 可以看到调用了    &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;__libc_lock_lock (tzset_lock);&lt;/code&gt; 加锁，进程就是死锁在这里。&lt;/p&gt;
+
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cm&quot;&gt;/* Return the `struct tm' representation of TIMER in the local timezone.
+   Use local time if USE_LOCALTIME is nonzero, UTC otherwise.  */&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tm&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;
+&lt;span class=&quot;nf&quot;&gt;__tz_convert&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;__time64_t&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;timer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;use_localtime&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tm&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;kt&quot;&gt;long&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;leap_correction&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;leap_extra_secs&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;__libc_lock_lock&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tzset_lock&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;cm&quot;&gt;/* Update internal database according to current TZ setting.
+     POSIX.1 8.3.7.2 says that localtime_r is not required to set tzname.
+     This is a good idea since this allows at least a bit more parallelism.  */&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;tzset_internal&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;_tmbuf&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;use_localtime&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;__use_tzfile&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;__tzfile_compute&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;timer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;use_localtime&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;leap_correction&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                      &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;leap_extra_secs&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;__offtime&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;timer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;tp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;__tz_compute&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;timer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;use_localtime&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;leap_correction&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0L&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;leap_extra_secs&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;__libc_lock_unlock&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tzset_lock&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;use_localtime&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+          &lt;span class=&quot;n&quot;&gt;tp&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tm_isdst&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+          &lt;span class=&quot;n&quot;&gt;tp&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tm_zone&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;GMT&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+          &lt;span class=&quot;n&quot;&gt;tp&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tm_gmtoff&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0L&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;__offtime&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;timer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tp&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tm_gmtoff&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;leap_correction&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;tp&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tm_sec&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;leap_extra_secs&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;tp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;__libc_lock_lock (tzset_lock);&lt;/code&gt; 执行了加锁操作， tzset_lock 是通过下面的宏定义的&lt;/p&gt;
+
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;__libc_lock_define_initialized&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tzset_lock&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;宏替换后的代码是&lt;/p&gt;
+
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;__libc_lock_t&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tzset_lock&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;最终在 libc-lock.h 中找到 __libc_lock_t 的定义&lt;/p&gt;
+
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;typedef&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pthread_mutex_t&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;__libc_lock_t&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;可以确认这是一把静态共享锁。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;为什么这里需要加锁？&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;__tz_convert 中计算的时候使用了多个全局变量，比如 _tm_buf, __tz_name, __daylight, __timezone 等全局变量，计算过程中，都有读写，非线程安全。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;为什么会产生死锁？&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;fork 时，子进程会复制锁和锁的状态，假如复制时，主进程的刚好有个操作进行了加锁操作，此时子进程得到的锁就已经是&lt;strong&gt;上锁&lt;/strong&gt;的状态，这时子进程再去加锁，只会永远等待，因为没有任何操作去解锁；主进程中解锁也是解自己的锁，与子进程无关。&lt;/p&gt;
+
+&lt;p&gt;这样就得到的死锁的原因和根源，剩下的就是找到最合适的解决方法。&lt;/p&gt;
+
+&lt;h3 id=&quot;解决方法&quot;&gt;解决方法&lt;/h3&gt;
+
+&lt;p&gt;办法有很多，最终选择替换 localtime_r 函数，参考了 redis 5.0 实现的 nolocks_localtime 函数，彻底替换了 localtime_r 函数。&lt;/p&gt;
+
+&lt;p&gt;参考 https://github.com/antirez/redis/blob/5.0.0/src/localtime.c&lt;/p&gt;
+
+&lt;h3 id=&quot;总结&quot;&gt;总结&lt;/h3&gt;
+
+&lt;p&gt;多线程且有锁操作的程序要谨慎使用 fork, 存在父进程和子进程都要使用的锁，复制后都有可能造成子进程死锁。&lt;/p&gt;
+
+&lt;p&gt;最终总结一下解决思路：&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;避免共享锁的代码&lt;/li&gt;
+  &lt;li&gt;在 fork 之后立即调用 execv 方法抛弃父进程的空间数据，启用新的进程内存空间，从根本上独立于父进程，相当重新开了个进程，自然不会有锁的问题&lt;/li&gt;
+  &lt;li&gt;使用 pthread_afork 在fork 前释放共享的锁，这个方法使用并不方便，如果引用的库中包含锁，很难对全部的锁进行操作，解锁时也可能导致使用锁的程序状态异常&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+        <pubDate>Mon, 14 Oct 2019 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/linux/2019/10/14/linux-fork-child-process-got-deadlock-in-localtime/</link>
+        <guid isPermaLink="true">http://localhost:4000/linux/2019/10/14/linux-fork-child-process-got-deadlock-in-localtime/</guid>
+        
+        <category>process</category>
+        
+        <category>localtime</category>
+        
+        <category>fork</category>
+        
+        
+        <category>linux</category>
+        
+      </item>
+    
+  </channel>
+</rss>

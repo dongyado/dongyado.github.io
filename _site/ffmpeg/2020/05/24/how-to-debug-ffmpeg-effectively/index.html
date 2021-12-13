@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>如何高效的调试 ffmpeg</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/ffmpeg/2020/05/24/how-to-debug-ffmpeg-effectively/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/ffmpeg/2020/05/24/how-to-debug-ffmpeg-effectively/">如何高效的调试 ffmpeg</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		<h3 id="为什么需要调试-ffmpeg">为什么需要调试 ffmpeg</h3>
+
+<p>Ffmpeg 作为音频编解码封装最流行的基础工具，也是一个庞大的程序，大部分使用是使用命令行去处理。但是也有更高级的应用，比如在手机端，服务端开发基于 ffmpeg 开放的 api 的应用程序。</p>
+
+<p>在移动端，特别是安卓端，只要有音视频的处理，基本是离不开 ffmpeg 开放的 api 。在服务端进行视频渲染解码，封装转码也需要ffmpeg。</p>
+
+<p>但是在熟悉精通整个 ffmpeg 的大部分接口和音视频相关基础之前，几乎所有人都会遇到 ffmpeg 接口返回的错误码，比如 -1, -22。一般的处理情况都是去看 ffmpeg 提供的 examples, 或者再次搜索一下其他人有没有遇到同样的问题。</p>
+
+<p>但是 ffmpeg 返回的错误码是公用的，比如 -22 表示 invalid argument, 但是到底是哪一个参数没设置正确， ffmpeg 根本没有任何提示。对于这种问题，供刚入门 ffmpeg 的童鞋的解决方法，要么用排除法，一个一个的方式去试，幸运的时候能试出来，但是试不出来是常态，可能会在这样一个问题上浪费几个小时，甚至几天的时间。</p>
+
+<p>所以需要找到更高效的方法。</p>
+
+<h3 id="如何高效调试">如何高效调试</h3>
+
+<h4 id="1-让--ffmpeg--打印-debug-级别的日志">1. 让  ffmpeg  打印 debug 级别的日志</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># 在调用 ffmpeg 相关函数前 设置 ffmpeg 打印的日志级别为 debug
+av_log_set_level(AV_LOG_DEBUG);
+</code></pre></div></div>
+
+<p>在运行程序时， ffmpeg 会打印所有调试信息，这时候就是要找到可能的反应原因的错误信息，但是我们也有很大可能还是找不到具体原因。</p>
+
+<h4 id="2-编译带完整debug-信息的-ffmpeg">2. 编译带完整debug 信息的 ffmpeg</h4>
+<p>在使用 ffmpeg 接口出现了问题时，如果能通过 gdb 断点进去 ffmepg 相关的文件去调试，这对有助于快速定位问题。</p>
+
+<p>但是需要我们手动编译带 debug 信息，并且去掉编译优化的 ffmpeg 库：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./configure \
+    --prefix="/usr/" \
+    --pkg-config-flags="--static" \
+    --extra-cflags="-I$HOME/ffmpeg_build/include" \
+    --extra-ldflags="-L$HOME/ffmpeg_build/lib" \
+    --extra-libs="-lpthread -lm" \
+    --bindir="/usr/bin" \
+    --enable-debug=3\
+    --disable-optimizations \
+    --disable-stripping \
+    --enable-shared \
+    --enable-pic \
+    --enable-gpl \
+    --enable-nonfree \
+    ...
+</code></pre></div></div>
+<p>–disable-optimizations 用于去掉编译的优化，这样可以避免在 gdb 调试时，变量出现 <code class="language-plaintext highlighter-rouge">optimized out</code> 的提示</p>
+
+<p>–disable-stripping 禁止去掉 gdb 所需的符号信息</p>
+
+<p>编译出来的库，就可以使用 gdb 跟踪具体在 ffmpeg 中的哪一步出错，能快速定位问题。</p>
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2020-05-24
+     • Category: 
+        
+        <a href="/categories//#ffmpeg-ref" >Ffmpeg</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#ffmpeg-ref" >Ffmpeg</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

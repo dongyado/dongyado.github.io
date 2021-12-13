@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Ffmpeg sws_scale 颜色转换，右侧花屏问题研究及解决方案</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/ffmpeg/video/audio%20tech/2019/12/20/ffmpeg-sws-scale-generate-right-band-if-not-resizing/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/ffmpeg/video/audio%20tech/2019/12/20/ffmpeg-sws-scale-generate-right-band-if-not-resizing/">Ffmpeg sws_scale 颜色转换，右侧花屏问题研究及解决方案</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		<p>使用 ffmpeg 解码视频后，需要将视频颜色从 yuv420p 转换到 rgba 后渲染。</p>
+
+<p>在视频宽度不为8的倍数时，会出现视频画面右侧出现一条花屏。比如视频的宽度为 566， 566 % 8 = 6, 右侧会有6个像素宽度的花屏。</p>
+
+<ul>
+  <li>转换代码如下：</li>
+</ul>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// 初始化转换上下文对象，输入颜色模式为 yuv420p, 输出格式为 rgba, 宽高不变</span>
+<span class="n">mColorConversionContext</span> <span class="o">=</span> <span class="n">sws_getCachedContext</span><span class="p">(</span>	
+    <span class="n">mColorConversionContext</span><span class="p">,</span>
+    <span class="n">mMeta</span><span class="p">.</span><span class="n">mWidth</span><span class="p">,</span> <span class="n">mMeta</span><span class="p">.</span><span class="n">mHeight</span><span class="p">,</span> <span class="n">AV_PIX_FMT_YUV420P</span><span class="p">,</span>
+    <span class="n">mMeta</span><span class="p">.</span><span class="n">mWidth</span><span class="p">,</span> <span class="n">mMeta</span><span class="p">.</span><span class="n">mHeight</span><span class="p">,</span> <span class="n">AV_PIX_FMT_RGBA</span><span class="p">,</span>
+    <span class="n">SWS_FAST_BILINEAR</span><span class="p">,</span> <span class="n">nullptr</span><span class="p">,</span> <span class="n">nullptr</span><span class="p">,</span> <span class="n">nullptr</span><span class="p">);</span>
+
+<span class="c1">// 初始化目标数据相关对象</span>
+<span class="n">mConvertedFrame</span> <span class="o">=</span> <span class="n">av_frame_alloc</span><span class="p">();</span>
+<span class="kt">int</span> <span class="n">bufferSize</span> <span class="o">=</span> <span class="n">av_image_get_buffer_size</span><span class="p">(</span><span class="n">AV_PIX_FMT_RGBA</span><span class="p">,</span> <span class="n">mMeta</span><span class="p">.</span><span class="n">mWidth</span><span class="p">,</span> <span class="n">mMeta</span><span class="p">.</span><span class="n">mHeight</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+<span class="n">mConvertedBuffer</span> <span class="o">=</span> <span class="p">(</span><span class="kt">uint8_t</span> <span class="o">*</span><span class="p">)</span><span class="n">av_malloc</span><span class="p">(</span><span class="n">bufferSize</span> <span class="o">*</span> <span class="nf">sizeof</span><span class="p">(</span><span class="kt">uint8_t</span><span class="p">));</span>
+<span class="n">av_image_fill_arrays</span><span class="p">(</span><span class="n">mConvertedFrame</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">,</span>
+                    <span class="n">mConvertedFrame</span><span class="o">-&gt;</span><span class="n">linesize</span><span class="p">,</span>
+                    <span class="n">mConvertedBuffer</span><span class="p">,</span>
+                    <span class="n">AV_PIX_FMT_RGBA</span><span class="p">,</span>
+                    <span class="n">mMeta</span><span class="p">.</span><span class="n">mWidth</span><span class="p">,</span>
+                    <span class="n">mMeta</span><span class="p">.</span><span class="n">mHeight</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+<span class="c1">// ...</span>
+<span class="c1">// 从 yuv420p 转换到 rgba</span>
+<span class="n">sws_scale</span><span class="p">(</span><span class="n">mColorConversionContext</span><span class="p">,</span>
+            <span class="p">(</span><span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="k">const</span> <span class="o">*</span><span class="p">)</span><span class="n">mDecodeFrameContext</span><span class="o">-&gt;</span><span class="n">mFrame</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">,</span>
+            <span class="n">mDecodeFrameContext</span><span class="o">-&gt;</span><span class="n">mFrame</span><span class="o">-&gt;</span><span class="n">linesize</span><span class="p">,</span>
+            <span class="mi">0</span><span class="p">,</span>
+            <span class="n">mMeta</span><span class="p">.</span><span class="n">mHeight</span><span class="p">,</span>
+            <span class="n">mConvertedFrame</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">,</span>
+            <span class="n">mConvertedFrame</span><span class="o">-&gt;</span><span class="n">linesize</span><span class="p">);</span>
+
+
+</code></pre></div></div>
+
+<p>查找过程中，依次尝试了以下方法：</p>
+<ul>
+  <li>直接把解码后的 AVFrame 写成图片，图片数据完好</li>
+  <li>把 sws_scale 后的数据写入图片，图片右侧出现花屏</li>
+</ul>
+
+<p>以此确定 sws_scale 转换后右侧超出的像素数据有问题，通过对目标数据内存填零（rgba 四位全部填0，则此时画面为透明），再把 sws_scale 转换后的数据写入图片，多出的部分为透明，
+表明 sws_scale 并没有往那些位置填入颜色数据。</p>
+
+<p>通过 ffmpeg 官方邮件用户组查到，该问题 2012 年就已经被发现了，直到 2019 年，正在使用的 4.1.3 版本也没有修复。</p>
+
+<ul>
+  <li>修复后的代码如下：</li>
+</ul>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">int</span> <span class="n">swsFlags</span> <span class="o">=</span> <span class="n">SWS_FAST_BILINEAR</span><span class="p">;</span>
+
+<span class="c1">// 当视频宽高不为8的倍数，同时转换又没有尺寸变化时，会导致右侧出现一条花屏</span>
+<span class="c1">// 这个问题从 2012年被发现，到2019年的 4.1.3 版本还继续存在</span>
+<span class="c1">// 通过增加 SWS_ACCURATE_RND 可以规避这个问题</span>
+<span class="k">if</span> <span class="p">((</span><span class="n">mMeta</span><span class="p">.</span><span class="n">mWidth</span> <span class="o">&amp;</span> <span class="mh">0x7</span><span class="p">)</span> <span class="o">||</span> <span class="p">(</span><span class="n">mMeta</span><span class="p">.</span><span class="n">mHeight</span> <span class="o">&amp;</span> <span class="mh">0x7</span><span class="p">))</span> <span class="p">{</span>
+    <span class="n">swsFlags</span> <span class="o">|=</span> <span class="n">SWS_ACCURATE_RND</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 初始化转换上下文对象</span>
+<span class="n">mColorConversionContext</span> <span class="o">=</span> <span class="n">sws_getCachedContext</span><span class="p">(</span>	
+    <span class="n">mColorConversionContext</span><span class="p">,</span>
+    <span class="n">mMeta</span><span class="p">.</span><span class="n">mWidth</span><span class="p">,</span> <span class="n">mMeta</span><span class="p">.</span><span class="n">mHeight</span><span class="p">,</span> <span class="n">AV_PIX_FMT_YUV420P</span><span class="p">,</span>
+    <span class="n">mMeta</span><span class="p">.</span><span class="n">mWidth</span><span class="p">,</span> <span class="n">mMeta</span><span class="p">.</span><span class="n">mHeight</span><span class="p">,</span> <span class="n">AV_PIX_FMT_RGBA</span><span class="p">,</span>
+    <span class="n">swsFlags</span><span class="p">,</span> <span class="n">nullptr</span><span class="p">,</span> <span class="n">nullptr</span><span class="p">,</span> <span class="n">nullptr</span><span class="p">);</span>
+
+<span class="c1">// ...</span>
+
+</code></pre></div></div>
+
+<p>上述代码只在宽高补位8的倍数的情况下，启用 SWS_ACCURATE_RND 参数，强制 ffmpeg swscale 不使用 non_resizing 的算法，从而规避这个问题。</p>
+
+<p>相关资料： http://libav-users.943685.n4.nabble.com/Libav-user-sws-scale-has-weird-behavior-when-not-resizing-td4655402.html</p>
+
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2019-12-20
+     • Category: 
+        
+        <a href="/categories//#ffmpeg-ref" >Ffmpeg</a>
+        
+        <a href="/categories//#video/audio tech-ref" >Video/audio tech</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#ffmpeg-ref" >Ffmpeg</a>
+        
+            <a href="/tags//#sws_scale-ref" >Sws_scale</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

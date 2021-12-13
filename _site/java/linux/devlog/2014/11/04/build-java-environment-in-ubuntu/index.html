@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Ubuntu下搭建java开发环境</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="这个月底要重新捡起java工作了，以前用过的开发环境忘的差不多了，为了避免自己每一次换系统之后都要打开做死的百度(G娘被墙，本机暂时没用代理)去搜索，还是记下来以备后用比较靠谱。
+
+">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/java/linux/devlog/2014/11/04/build-java-environment-in-ubuntu/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/java/linux/devlog/2014/11/04/build-java-environment-in-ubuntu/">Ubuntu下搭建java开发环境</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		这个月底要重新捡起java工作了，以前用过的开发环境忘的差不多了，为了避免自己每一次换系统之后都要打开做死的百度(G娘被墙，本机暂时没用代理)去搜索，还是记下来以备后用比较靠谱。
+
+<!-- more -->
+<h3>一， 安装JDK</h3>
+<p>其实就是分两步：</p>
+<p>1. 下载jdk包，<a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">点击进入下载页面</a>，下载完成后找个目录解压，像这种用户程序我习惯放在用户目录下的vhost，也就是/home/slayer/vhost/jdk1.8</p>
+<p>2.然后配置环境变量，为什么要配置这个？？这只是为了执行java命令的时候系统能够查找到相关的命令；vim ~/.bashrc加上：</p>
+<pre class="lang:sh decode:true"># jdk
+export JAVA_HOME=/home/slayer/vhost/jdk1.8
+export JRE_HOME=${JAVA_HOME}/jre
+export CLASS_PATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib
+export PATH=${JAVA_HOME}/bin:$PATH</pre>
+<p>当然这是只对当前用户有效，然后重启终端，执行java -version验证是否配置成功即可。a</p>
+<p>或者加入到/etc/profile，再执行source /etc/profile重新加载文件，其他用户也可以使用了。</p>
+<h3>二，ecplise</h3>
+<p>我比较喜欢在eclipse下面写java，所以把eclipse装上。</p>
+<p>1. 先下载对应的eclipse版本，我的是java se版本，<a href="http://www.eclipse.org/downloads/">点击进入下载页面</a>。然后解压到一个目录，我的还是放在了/home/slayer/vhost/eclipse/下面;</p>
+<p>2. 然后可以从命令行执行./eclipse就可以启动了</p>
+<p>3.不过偶尔也会偷懒，为了可以在桌面环境下双击eclipse，我们可以加一个快捷方式到菜单栏，执行</p>
+<pre class="lang:sh decode:true"> vim /usr/share/applications/eclipse.desktop</pre>
+<p>添加以下几行到该文件：</p>
+<pre class="lang:default decode:true">[Desktop Entry]
+Type=Application
+Name=Eclipse
+Comment=Eclipse Integrated Development Environment
+Icon=/home/slayer/vhost/eclipse/icon.xpm
+Exec=/home/slayer/vhost/eclipse/eclipse
+Terminal=false
+Categories=Development;IDE;Java;</pre>
+<p>上面的东西应该很容易看懂，就不多废话了，这样一个简单的java开发环境算是搭建完成了。</p>
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2014-11-04
+     • Category: 
+        
+        <a href="/categories//#java-ref" >Java</a>
+        
+        <a href="/categories//#linux-ref" >Linux</a>
+        
+        <a href="/categories//#devlog-ref" >Devlog</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#ubuntu-ref" >Ubuntu</a>
+        
+            <a href="/tags//#java-ref" >Java</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

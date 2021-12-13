@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>在 WebAssembly 中实现回调的方式</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/webassembly/2021/01/31/implement-callback-in-webassembly/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/webassembly/2021/01/31/implement-callback-in-webassembly/">在 WebAssembly 中实现回调的方式</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		<p>本文将介绍在 C++ 中实现 js 回调的几种方式. 在使用 wasm 的过程中, 避免不了要从 C++ 回调 js 的函数来实现异步交互.</p>
+
+<p>官网文档 https://emscripten.org/docs/porting/connecting_cpp_and_javascript/Interacting-with-code.html#</p>
+
+<p>中已经介绍了6种实现回调的方式, 这里介绍几种能解决实际问题的方式</p>
+
+<hr />
+<h3 id="em_asm-相关参数介绍">EM_ASM 相关参数介绍</h3>
+
+<p>EM_ASM 函数簇包含</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>EM_ASM
+EM_ASM_INT
+EM_ASM_DOUBLE
+</code></pre></div></div>
+
+<p>类似的使用方式 :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>EM_ASM_({
+            postMessage({cmd: 'callback', text: "callback", threadId: $2, callId : $0, code : $1})
+        }, callback, code, tid);
+</code></pre></div></div>
+
+<p>其中 $0, $1, $2 分别代表 callback, code, tid 的值.</p>
+
+<p>后面两个函数还可以获取到 js 返回的 int/ double 值. 一般能满足简单的使用.</p>
+
+<hr />
+<h3 id="如何在-worker-中实现回调">如何在 worker 中实现回调</h3>
+
+<p>使用 wasm 的时候, 某些任务会被放到 worker 中执行, 执行完成后回调通知结果.</p>
+
+<p>这个时候要特别注意: worker 和主线程是相互独立的, 并不能像普通的多线程可以共享进程内的数据. 在 worker 中调用 js 回调时, 第一个面临的限制就是 web worker 的限制:</p>
+
+<ol>
+  <li>不能访问 window, document 对象</li>
+  <li>与主线程通信需要通过 post message 方式</li>
+  <li>不能访问主进程中的全局变量会对象</li>
+</ol>
+
+<p>如果直接在 worker 中直接调用回调, 就只能做一些简单的事情. 为此 emscripten 提供了以下函数:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MAIN_THREAD_EM_ASM
+MAIN_THREAD_EM_ASM_INT
+MAIN_THREAD_EM_ASM_DOUBLE
+MAIN_THREAD_ASYNC_EM_ASM
+</code></pre></div></div>
+
+<p>顾名思义就是在主线程中执行函数. 但是前面 3 个函数不管在哪个线程调用都会会阻塞主线程.</p>
+
+<p>推荐使用最后一个 MAIN_THREAD_ASYNC_EM_ASM, 区别就是在如果是主线程调用该函数,会被理解执行,如果是在其他线程调用,则会被追加到主线程的任务队列再被执行.</p>
+
+<p>至于如何实现这个功能了, emscripten 也突破不了这个限制, 也是通过 postMessage 的通信机制实现的.</p>
+
+<p>在不熟悉 emscripten 的时候我自己模拟了这个过程:</p>
+
+<ol>
+  <li>在主线程注册函数, 保存在一个特定的对象中, 并产生一个 callid</li>
+  <li>把callid 传到 worker 中,使用上述的 EM_ASM 回调</li>
+  <li>子线程会把信息 post 到主线程</li>
+  <li>主线程收到 message 和 callid, 去特定的对象查找到已经注册的回调函数, 执行函数,完成回调</li>
+</ol>
+
+<h3 id="如何在回调中传递字符串">如何在回调中传递字符串</h3>
+<p>在 emscripten 值的传递, 除了基本类型是通过拷贝的, 字符串和数组,内存都是通过指针地址去传递.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    std::string data = "{\"code\" : 0, \"msg\" : \"/input.mp4\"}"
+    MAIN_THREAD_ASYNC_EM_ASM({
+         var dataStr = UTF8ToString($0);
+         console.log(dataStr)
+    }, data.c_str());
+</code></pre></div></div>
+<p>在回调函数中,通过 UTF8ToString 函数把传递过去的指针转成 js 的字符串, 这样来达到传递字符串的目的.</p>
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2021-01-31
+     • Category: 
+        
+        <a href="/categories//#webassembly-ref" >Webassembly</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#webassembly-ref" >Webassembly</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>

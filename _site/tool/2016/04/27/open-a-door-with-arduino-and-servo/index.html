@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>使用 arduino + 树莓派 实现远程控制开门 — arduino控制舵机</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="">
+
+    
+    
+
+    <link rel="canonical" href="http://localhost:4000/tool/2016/04/27/open-a-door-with-arduino-and-servo/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/tool/2016/04/27/open-a-door-with-arduino-and-servo/">使用 arduino + 树莓派 实现远程控制开门 — arduino控制舵机</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		<p>arduino就是一块神奇的板子，为嘛神奇，因为外行也能用它作出不可思议的东西。
+下面先介绍一下如何使用arduino控制舵机，最终实现接电话开门的动作。</p>
+
+<h3 id="材料">材料</h3>
+
+<ul>
+  <li>板子，某宝可入正版，90大洋能搞定。</li>
+  <li>舵机，10大洋以内可入。长这样,上面装了个桨。</li>
+</ul>
+
+<p><img src="/images/post/servo1.jpg" alt="servo" /></p>
+
+<h3 id="入门">入门</h3>
+
+<ul>
+  <li>先把板子和电脑用自带的USB连上，因为驱动的东西不多，就直接使用USB供电了。</li>
+  <li>下载安装arduino IDE, windows,mac,linux版本都有，只需在官网下载即可使用。</li>
+  <li>IDE提供了很多示例程序，直接拿过来使用，稍微修改一下就能直接上传到板子使用，很方便。</li>
+  <li>IDE也提供了串口通讯监视器，可直接发送数据给arduino，也可以接收arduino输出的数据，为调试提供了很大的便利。</li>
+  <li>
+    <p>要注意个地方在于，linux下的权限问题， 串口通讯需要往串口输入数据的权限，采用下面的命令修改权限</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sudo usermod -a -G dialout username 
+sudo chmod a+rw /dev/ttyACM0
+</code></pre></div>    </div>
+
+    <p>/dev/ttyACM0 就是arduino设备</p>
+
+    <p>其他的资料基本可以自行脑补，就不多敷述了。</p>
+  </li>
+</ul>
+
+<h3 id="连接线路">连接线路</h3>
+<p>普通舵机有三根线：GND（黑，接地）、VCC（红，电源）、Signal（黄，信号）
+接线如下：</p>
+
+<p><img src="/images/post/arduino-servo.png" alt="servo" /></p>
+
+<p>GND表示ground的意思，接地； vcc 接5v电源； signal 接9号针脚。</p>
+
+<h3 id="测试">测试</h3>
+<p>arduino IDE自带了很多示例,选一个舵机的示例测试一下,打开
+arduino ide -&gt; 文件 -&gt; 示例 -&gt; 第三方示例 -&gt; Servo -&gt; sweep
+源码如下：</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cm">/* Sweep
+ by BARRAGAN &lt;http://barraganstudio.com&gt;
+ This example code is in the public domain.
+
+ modified 8 Nov 2013
+ by Scott Fitzgerald
+ http://www.arduino.cc/en/Tutorial/Sweep
+*/</span>
+
+<span class="cp">#include &lt;Servo.h&gt;
+</span>
+<span class="c1">// 创建一个servo(舵机)控制对象</span>
+<span class="n">Servo</span> <span class="n">myservo</span><span class="p">;</span>  <span class="c1">// create servo object to control a servo</span>
+<span class="c1">// twelve servo objects can be created on most boards</span>
+
+<span class="c1">// 储存舵机位置</span>
+<span class="kt">int</span> <span class="n">pos</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>    <span class="c1">// variable to store the servo position</span>
+
+<span class="c1">// 初始化</span>
+<span class="kt">void</span> <span class="nf">setup</span><span class="p">()</span> <span class="p">{</span>
+  <span class="c1">// 绑定myservo到9号针脚,后面只能通过9号针脚控制myservo</span>
+  <span class="n">myservo</span><span class="p">.</span><span class="n">attach</span><span class="p">(</span><span class="mi">9</span><span class="p">);</span>  <span class="c1">// attaches the servo on pin 9 to the servo object</span>
+<span class="p">}</span>
+
+<span class="c1">// 死循环</span>
+<span class="kt">void</span> <span class="nf">loop</span><span class="p">()</span> <span class="p">{</span>
+  <span class="c1">// 从0转到180度</span>
+  <span class="k">for</span> <span class="p">(</span><span class="n">pos</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">pos</span> <span class="o">&lt;=</span> <span class="mi">180</span><span class="p">;</span> <span class="n">pos</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// goes from 0 degrees to 180 degrees</span>
+    <span class="c1">// in steps of 1 degree</span>
+    <span class="n">myservo</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="n">pos</span><span class="p">);</span>              <span class="c1">// tell servo to go to position in variable 'pos'</span>
+    <span class="n">delay</span><span class="p">(</span><span class="mi">15</span><span class="p">);</span>                       <span class="c1">// waits 15ms for the servo to reach the position</span>
+  <span class="p">}</span>
+  
+  <span class="c1">// 从180度转到0度</span>
+  <span class="k">for</span> <span class="p">(</span><span class="n">pos</span> <span class="o">=</span> <span class="mi">180</span><span class="p">;</span> <span class="n">pos</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">pos</span> <span class="o">-=</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// goes from 180 degrees to 0 degrees</span>
+    <span class="n">myservo</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="n">pos</span><span class="p">);</span>              <span class="c1">// tell servo to go to position in variable 'pos'</span>
+    <span class="n">delay</span><span class="p">(</span><span class="mi">15</span><span class="p">);</span>                       <span class="c1">// waits 15ms for the servo to reach the position</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>如上，arduino 控制程序主要只有两个方法，setup和loop。
+setup初始化一些东西, 比如绑定舵机到9号针脚。
+在loop里面实现控制程序。</p>
+
+<p>arduino从一启动先执行setup,然后进入loop死循环,所以loop才是主战场。</p>
+
+<h3 id="控制两个舵机实现开门">控制两个舵机,实现开门</h3>
+<p>接电话分三个动作:</p>
+
+<ul>
+  <li>接 - 拿起电话,放电话的槽中有个按钮会弹起来,从而接通</li>
+  <li>按 - 右侧边有个开门的按钮, 按下去,会把门打开</li>
+  <li>挂 - 把电话挂掉,把第一步的那个按钮按下去</li>
+</ul>
+
+<p>如下图摆放(做的很粗糙,拍照技术也渣),</p>
+
+<p>左側phoneServo否则接电话和挂电话, 右側unlockServo负责开门。 
+phoneServo需要先初始化为90度,把按钮按下去; unlockServo初始化为0度。</p>
+
+<p><img src="/images/post/servo3.jpg" alt="servo" /></p>
+
+<p>流程清楚了,程序也很简单,顺便加了串口通讯在里面。如下:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cm">/**
+ * servo control program
+ * 
+ * @author dongyado&lt;dongyado@gmail.com&gt;
+ */</span>
+
+<span class="cp">#include&lt;Servo.h&gt;
+</span>
+<span class="n">Servo</span> <span class="n">unlockServo</span><span class="p">;</span> <span class="c1">// 开门舵机</span>
+<span class="n">Servo</span> <span class="n">phoneServo</span><span class="p">;</span>  <span class="c1">// 电话舵机</span>
+
+<span class="kt">int</span> <span class="n">pos</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+<span class="kt">int</span> <span class="n">maxPhonePos</span>  <span class="o">=</span> <span class="mi">90</span><span class="p">;</span> <span class="c1">// phoneServe最大角度</span>
+<span class="kt">int</span> <span class="n">maxUnlockPos</span> <span class="o">=</span> <span class="mi">30</span><span class="p">;</span> <span class="c1">// unlockServe最大角度</span>
+
+<span class="n">String</span> <span class="n">comdata</span> <span class="o">=</span> <span class="s">""</span><span class="p">;</span> <span class="c1">// 存储接收的指令</span>
+
+<span class="kt">void</span> <span class="nf">setup</span><span class="p">()</span> <span class="p">{</span>
+  
+    <span class="n">Serial</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="mi">9600</span><span class="p">);</span> <span class="c1">// 监听串口,波特率9600</span>
+    
+    <span class="c1">// connect </span>
+    <span class="n">unlockServo</span><span class="p">.</span><span class="n">attach</span><span class="p">(</span><span class="mi">9</span><span class="p">);</span>
+    <span class="n">phoneServo</span><span class="p">.</span><span class="n">attach</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+  
+    <span class="c1">//reset</span>
+    <span class="n">unlockServo</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+    <span class="n">phoneServo</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="n">maxPhonePos</span><span class="p">);</span>
+    
+    <span class="n">delay</span><span class="p">(</span><span class="mi">200</span><span class="p">);</span> <span class="c1">// 延时是为了等待舵机转动完成</span>
+    
+    <span class="c1">// disconnect</span>
+    <span class="n">unlockServo</span><span class="p">.</span><span class="n">detach</span><span class="p">();</span>
+    <span class="n">phoneServo</span><span class="p">.</span><span class="n">detach</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">loop</span><span class="p">()</span> <span class="p">{</span>
+
+    <span class="c1">//接收串口发来的数据</span>
+    <span class="k">while</span> <span class="p">(</span><span class="n">Serial</span><span class="p">.</span><span class="n">available</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>  
+    <span class="p">{</span>
+        <span class="n">comdata</span> <span class="o">+=</span> <span class="kt">char</span><span class="p">(</span><span class="n">Serial</span><span class="p">.</span><span class="n">read</span><span class="p">());</span>
+        <span class="n">delay</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+    <span class="p">}</span>
+    
+    <span class="c1">// 接收到数据</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">comdata</span><span class="p">.</span><span class="n">length</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// connect </span>
+        <span class="n">unlockServo</span><span class="p">.</span><span class="n">attach</span><span class="p">(</span><span class="mi">9</span><span class="p">);</span>
+        <span class="n">phoneServo</span><span class="p">.</span><span class="n">attach</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+
+        <span class="c1">// 判断指令</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">comdata</span> <span class="o">==</span> <span class="s">"open"</span> <span class="o">||</span> <span class="n">comdata</span> <span class="o">==</span> <span class="s">"1"</span> <span class="p">)</span> <span class="p">{</span>
+            
+            <span class="c1">// get the phone up </span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">pos</span> <span class="o">=</span> <span class="n">maxPhonePos</span><span class="p">;</span> <span class="n">pos</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">pos</span> <span class="o">-=</span><span class="mi">1</span> <span class="p">){</span>
+              <span class="n">phoneServo</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="n">pos</span><span class="p">);</span>
+              <span class="n">delay</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>  
+            <span class="p">}</span>
+
+            <span class="n">delay</span><span class="p">(</span><span class="mi">500</span><span class="p">);</span>
+            
+            <span class="c1">// press the button of open door</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">pos</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">pos</span> <span class="o">&lt;</span> <span class="n">maxUnlockPos</span><span class="p">;</span> <span class="n">pos</span><span class="o">+=</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">unlockServo</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="n">pos</span><span class="p">);</span>
+                <span class="n">delay</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+            <span class="p">}</span>
+
+            <span class="n">delay</span><span class="p">(</span><span class="mi">200</span><span class="p">);</span>
+
+            <span class="c1">//release the unlock button</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">pos</span> <span class="o">=</span> <span class="n">maxUnlockPos</span><span class="p">;</span> <span class="n">pos</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">pos</span> <span class="o">-=</span><span class="mi">1</span> <span class="p">){</span>
+              <span class="n">unlockServo</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="n">pos</span><span class="p">);</span>
+              <span class="n">delay</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>  
+            <span class="p">}</span>
+
+            <span class="c1">// get the phone down            </span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">pos</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">pos</span> <span class="o">&lt;</span> <span class="n">maxPhonePos</span><span class="p">;</span> <span class="n">pos</span><span class="o">+=</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">phoneServo</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="n">pos</span><span class="p">);</span>
+                <span class="n">delay</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="c1">//Serial.println(comdata);</span>
+
+        <span class="c1">// disconnect</span>
+        <span class="n">unlockServo</span><span class="p">.</span><span class="n">detach</span><span class="p">();</span>
+        <span class="n">phoneServo</span><span class="p">.</span><span class="n">detach</span><span class="p">();</span>
+    <span class="p">}</span> 
+
+ 
+    <span class="n">delay</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+    <span class="n">comdata</span> <span class="o">=</span> <span class="s">""</span><span class="p">;</span>
+<span class="p">}</span>
+
+</code></pre></div></div>
+
+<p>以上逻辑很简单,还加了串口通讯,使用自带的串口监视器即可发送open或者1给arduino,到此,arduino接电话开门的动作完成,下一步要做的就是实现远程调用接口开门.</p>
+
+<p>该主题其他文章： 
+<a href="http://dongyado.com/categories/#remote-control-door-ref">Remote-control-door</a></p>
+
+<p>相关链接：</p>
+
+<ul>
+  <li><a href="https://github.com/dongyado/remote-open-door">remote-open-door</a> - 项目源码</li>
+  <li><a href="https://github.com/dongyado/remote-open-door/blob/master/arduino_control/servo/servo.ino">servo</a> - 舵机(servo)控制程序</li>
+</ul>
+
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2016-04-27
+     • Category: 
+        
+        <a href="/categories//#tool-ref" >Tool</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#树莓派-ref" >树莓派</a>
+        
+            <a href="/tags//#arduino-ref" >Arduino</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>
