@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  在 electron 中使用 WebAssembly
+title:  在 Electron 中使用 WebAssembly
 date: 2021-12-12
 categories:
 - webassembly

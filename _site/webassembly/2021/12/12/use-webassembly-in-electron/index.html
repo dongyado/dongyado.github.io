@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>在 Electron 中使用 WebAssembly</title>
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="">
+
+    
+    
+
+    <link rel="canonical" href="https://dongyadoit.com/webassembly/2021/12/12/use-webassembly-in-electron/">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/monster.css">
+
+    
+
+</head>
+
+
+    <body>
+    
+    <div class="wrapper">
+
+      <header class="header">
+
+  <div class="site-title">
+    
+    <h4 class="entry-title"><a href="/webassembly/2021/12/12/use-webassembly-in-electron/">在 Electron 中使用 WebAssembly</a></h4>
+    
+  </div>
+
+<div class="links">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+</header>
+
+      
+      <div class="navi">
+    
+    <a href="/" class="page-link">Blog</a>
+    
+    
+    
+    
+      <a class="page-link"
+        href="/about/">About</a>
+    
+    
+    
+      <a class="page-link"
+        href="/categories/">Categories</a>
+    
+    
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/links/">Links</a>
+    
+    
+    
+    
+    
+      <a class="page-link"
+        href="/tags/">Tags</a>
+    
+    
+    <a href="/feed.xml" target="_blank" class="page-link">RSS</a>
+</div>
+
+
+      <div class="content">
+        <div class="articles">
+            <div class="entry post">
+
+	<div class="entry-content">
+	  <article class="entry-body">
+	  	
+	  		<p>Wasm 在浏览器的使用日趋常见，被经常用来做一些图像，音频，绘图，性能相关的处理。而 electron 本身就是使用 Chromium 内核的桌面应用 app 开发框架，自然也可以使用 wasm。</p>
+
+<h3 id="引入-wasm">引入 wasm</h3>
+<p>Electron 打包之后访问的是本地 html 文件，一般编译完成后引入在 html 里面直接引入:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;script src="/path/to/wasmlib.js" &gt;&lt;/script&gt;
+</code></pre></div></div>
+<p>wasmlib.js 会自动加载 wasmlib.wasm 文件并初始化，通过 Module 提供的回调函数获取初始化结果的通知</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Module.onRuntimeInitialized = async _ =&gt; {
+    // wasm lib initialized 
+}
+</code></pre></div></div>
+
+<h3 id="sharedarraybuffer-报错">SharedArrayBuffer 报错</h3>
+<p>SharedArrayBuffer被经常用于 worker 中的数据共享，如果 wasm 中有使用 ，在高版本浏览器（chrome 92 开始)上不能使用，会直接提示并报错:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[Deprecation] SharedArrayBuffer will require cross-origin isolation as of M92, around July 2021. See https://developer.chrome.com/blog/enabling-shared-array-buffer/ for more details.
+Uncaught ReferenceError: SharedArrayBuffer is not defined
+    at wasmlib.js:1074
+</code></pre></div></div>
+
+<p>这是因为在高版本上，chrome 对 SharedArrayBuffer 使用启用了更严格的安全限制，必须在服务器上配置了以下选项才能被使用：</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># COEP 跨域嵌入策略，会阻止页面加载任何未明确授予文档许可权的跨域资源（使用CORP或CORS）。
+Cross-Origin-Embedder-Policy: require-corp
+# COOP 
+Cross-Origin-Opener-Policy: same-origin
+</code></pre></div></div>
+<p>以上配置一般只能在 web 服务器配置，所以最初的方案是在 electron 内部启用个 web 服务器增加以上的头信息，然后通过 http 协议加载应用文件（相当于打开个在线网站），但是会带来很明显的性能问题，首页打开会非常慢。</p>
+
+<h3 id="最终解决方案">最终解决方案</h3>
+<ol>
+  <li>使用 electron 提供的 session 设置增加返回头信息:
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> session.defaultSession.webRequest.onHeadersReceived((details, callback) =&gt; {
+     callback({
+         responseHeaders: {
+             ...details.responseHeaders,
+             'Cross-Origin-Opener-Policy': 'same-origin',
+             'Cross-Origin-Embedder-Policy': 'require-corp',
+         },
+     });
+ });
+</code></pre></div>    </div>
+  </li>
+  <li>通过 BrowserWindow.LoadFile(“/path/to/app.html”) 加载本地 html 文件。<br />
+基于此，app 不需要内嵌一个 web 服务器，本地文件也可以使用SharedArrayBuffer 的功能，速度也得到很大的提升。</li>
+</ol>
+
+  		
+	  </article>
+    </div>
+
+</div>
+
+<div class="article-meta">
+    2021-12-12
+     • Category: 
+        
+        <a href="/categories//#webassembly-ref" >Webassembly</a>
+        
+    
+     • Tag: 
+        
+            <a href="/tags//#webassembly-ref" >Webassembly</a>
+        
+    
+</div>
+
+
+
+	<div class="article-author">
+    <div class="avatar">
+    <img width="50" height="50" src="/images/header.jpg" alt=" Avatar"/>
+    </div>
+    <div class="name">
+        <h4><b>MonsterSlayer</b> </h4>
+        Just for fun!
+    </div>
+</div>
+
+
+	
+	    <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'monsterslayer';
+	(function() {
+	    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+	    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+	
+
+
+<div class="cnzz"><script src="http://s4.cnzz.com/z_stat.php?id=1255123325&web_id=1255123325" language="JavaScript"></script> </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    </body>
+</html>
